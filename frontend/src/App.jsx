@@ -11,7 +11,7 @@ import ProcurementSimulator from "./components/ProcurementSimulator";
 import SettlementHeatmap from "./components/SettlementHeatmap";
 import LeadTimeChart from "./components/LeadTimeChart";
 import { ErrorState } from "./components/StatusStates";
-import { api } from "./services/api";
+import api, { getLeadTimeDecay } from "./services/api";
 import { ShieldCheck } from "lucide-react";
 
 export default function App() {
@@ -70,12 +70,16 @@ export default function App() {
       }
 
       // 2. Fetch parallel dashboard resources
+      const decayFetcher = (api && typeof api.getLeadTimeDecay === "function")
+        ? api.getLeadTimeDecay
+        : getLeadTimeDecay;
+
       const [metricsRes, seriesRes, settlementRes, dailyRes, decayRes] = await Promise.all([
         api.getAccuracyMetrics(startDate, endDate, cutoffHour),
         api.getAlignedSeries(startDate, endDate, cutoffHour),
         api.getSettlementPeriods(startDate, endDate, cutoffHour),
         api.getDailyScorecard(startDate, endDate, cutoffHour),
-        api.getLeadTimeDecay(startDate, endDate, cutoffHour),
+        decayFetcher(startDate, endDate, cutoffHour),
       ]);
 
       setMetrics(metricsRes.metrics);
