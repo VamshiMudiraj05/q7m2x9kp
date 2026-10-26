@@ -6,9 +6,9 @@ import ForecastChart from "./components/ForecastChart";
 import SettlementPeriodChart from "./components/SettlementPeriodChart";
 import DailyScorecardTable from "./components/DailyScorecardTable";
 import MethodologyPanel from "./components/MethodologyPanel";
-import { ErrorState, EmptyState } from "./components/StatusStates";
+import { ErrorState } from "./components/StatusStates";
 import { api } from "./services/api";
-import { ShieldCheck, Calendar, Activity, Sparkles } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export default function App() {
   // Theme state: defaults to dark mode for trading terminal feel
@@ -131,10 +131,13 @@ export default function App() {
             </div>
           </div>
 
-          <h1 className="font-instrument font-semibold text-3xl sm:text-4xl md:text-5xl tracking-tight text-gray-900 dark:text-white">
+          <h1 className="font-instrument font-bold text-3xl sm:text-4xl md:text-5xl tracking-tight text-gray-900 dark:text-white">
             Day-Ahead Wind Forecast & Error Evaluation Portal
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
+          <div className="font-instrument-sans font-semibold text-base sm:text-lg text-[#c2185b] dark:text-[#f3b9c8] mt-1 tracking-tight">
+            Elexon BMRS January 2026 Wholesale Procurement Benchmark
+          </div>
+          <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
             Quantitative decision support for electricity procurement in the UK wholesale market. Evaluates national wind generation forecasts available at gate closure to quantify balancing risk, thermal top-up requirements, and cash-out error margins for January 2026.
           </p>
         </div>

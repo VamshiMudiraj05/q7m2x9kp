@@ -11,9 +11,9 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { Calendar, Clock, Info, Layers } from "lucide-react";
+import { Calendar, Clock, Info } from "lucide-react";
 
-function CustomTooltip({ active, payload, label }) {
+function CustomTooltip({ active, payload, _label }) {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0]?.payload;

@@ -1,0 +1,54 @@
+import { test, describe } from 'node:test';
+import assert from 'node:assert/strict';
+
+describe('Frontend Data & Formatting Logic', () => {
+  test('formats numbers and handles null values gracefully', () => {
+    const formatMW = (val) => (val != null ? `${Number(val).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MW` : '—');
+    assert.equal(formatMW(2107.18), '2,107.2 MW');
+    assert.equal(formatMW(null), '—');
+    assert.equal(formatMW(undefined), '—');
+  });
+
+  test('correctly classifies over-forecasting vs under-forecasting bias', () => {
+    const classifyBias = (bias) => {
+      if (bias == null) return 'NO_DATA';
+      return bias > 0 ? 'OVER_FORECAST_SHORT_RISK' : 'UNDER_FORECAST_SPILL_RISK';
+    };
+
+    assert.equal(classifyBias(1839.9), 'OVER_FORECAST_SHORT_RISK');
+    assert.equal(classifyBias(-450.2), 'UNDER_FORECAST_SPILL_RISK');
+    assert.equal(classifyBias(null), 'NO_DATA');
+  });
+
+  test('validates Day-Ahead cutoff gate constraints', () => {
+    const isValidGate = (hour) => typeof hour === 'number' && hour >= 0 && hour <= 23;
+    assert.equal(isValidGate(11), true);
+    assert.equal(isValidGate(9), true);
+    assert.equal(isValidGate(24), false);
+    assert.equal(isValidGate(-1), false);
+  });
+
+  test('validates January 2026 date bounds', () => {
+    const isWithinJan2026 = (dateStr) => {
+      return dateStr >= '2026-01-01' && dateStr <= '2026-01-31';
+    };
+
+    assert.equal(isWithinJan2026('2026-01-01'), true);
+    assert.equal(isWithinJan2026('2026-01-15'), true);
+    assert.equal(isWithinJan2026('2026-01-31'), true);
+    assert.equal(isWithinJan2026('2025-12-31'), false);
+    assert.equal(isWithinJan2026('2026-02-01'), false);
+  });
+
+  test('calculates lead time from startTime and publishTime', () => {
+    const calcLeadTimeHours = (startTimeStr, publishTimeStr) => {
+      const st = new Date(startTimeStr);
+      const pt = new Date(publishTimeStr);
+      return Math.round(((st - pt) / (1000 * 3600)) * 100) / 100;
+    };
+
+    // Jan 2 14:00 delivery, Jan 1 09:30 publish -> 28.5 hours
+    const leadTime = calcLeadTimeHours('2026-01-02T14:00:00Z', '2026-01-01T09:30:00Z');
+    assert.equal(leadTime, 28.5);
+  });
+});

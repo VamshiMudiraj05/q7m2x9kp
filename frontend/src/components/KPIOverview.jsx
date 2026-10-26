@@ -1,5 +1,5 @@
 import React from "react";
-import { TrendingUp, AlertTriangle, ShieldCheck, HelpCircle, BarChart3, Compass } from "lucide-react";
+import { AlertTriangle, HelpCircle, Compass } from "lucide-react";
 
 export default function KPIOverview({ metrics, loading }) {
   if (loading || !metrics) {
@@ -19,9 +19,7 @@ export default function KPIOverview({ metrics, loading }) {
     bias,
     wmape,
     mape,
-    mapeThresholdMW = 100,
     mapeExcludedCount = 0,
-    totalActualGenerationMW = 0,
     maxAbsoluteErrorMW = 0,
     errorPercentiles,
   } = metrics;
@@ -43,12 +41,12 @@ export default function KPIOverview({ metrics, loading }) {
             </span>
           </div>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono text-[#111111] dark:text-[#ffffff]">
+            <span className="text-3xl sm:text-4xl font-bold tracking-tight font-instrument text-[#111111] dark:text-[#ffffff]">
               {mae != null ? Number(mae).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—'}
             </span>
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">MW</span>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 font-sans">MW</span>
           </div>
-          <div className="mt-2.5 text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between">
+          <div className="mt-2 text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between font-sans">
             <span>Volume deviation</span>
             <span className="font-mono text-gray-700 dark:text-gray-300">
               Max: {maxAbsoluteErrorMW != null ? `${Number(maxAbsoluteErrorMW).toLocaleString()} MW` : '—'}
@@ -58,7 +56,7 @@ export default function KPIOverview({ metrics, loading }) {
 
         {/* RMSE Card */}
         <div className="relative p-5 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft dashed-border-anim group">
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 font-sans">
             <span className="flex items-center gap-1.5 uppercase tracking-wider">
               Root Mean Squared Error
             </span>
@@ -67,12 +65,12 @@ export default function KPIOverview({ metrics, loading }) {
             </span>
           </div>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono text-[#111111] dark:text-[#ffffff]">
+            <span className="text-3xl sm:text-4xl font-bold tracking-tight font-instrument text-[#111111] dark:text-[#ffffff]">
               {rmse != null ? Number(rmse).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—'}
             </span>
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">MW</span>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 font-sans">MW</span>
           </div>
-          <div className="mt-2.5 text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between">
+          <div className="mt-2 text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between font-sans">
             <span>Severe miss penalty</span>
             <span className="font-mono text-amber-600 dark:text-amber-400">
               {mae != null && rmse != null ? `+${(rmse - mae).toFixed(1)} MW gap` : '—'}
@@ -82,7 +80,7 @@ export default function KPIOverview({ metrics, loading }) {
 
         {/* Forecast Bias Card */}
         <div className="relative p-5 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft dashed-border-anim group">
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 font-sans">
             <span className="flex items-center gap-1.5 uppercase tracking-wider">
               Forecast Bias
             </span>
@@ -92,17 +90,17 @@ export default function KPIOverview({ metrics, loading }) {
           </div>
           <div className="flex items-baseline gap-2 mt-1">
             <span
-              className={`text-2xl sm:text-3xl font-extrabold tracking-tight font-mono ${
+              className={`text-3xl sm:text-4xl font-bold tracking-tight font-instrument ${
                 isOverForecasting ? "text-amber-600 dark:text-amber-400" : "text-sky-600 dark:text-sky-400"
               }`}
             >
               {bias != null ? `${bias > 0 ? "+" : ""}${Number(bias).toFixed(1)}` : '—'}
             </span>
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">MW</span>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 font-sans">MW</span>
           </div>
-          <div className="mt-2.5">
+          <div className="mt-2">
             <span
-              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full font-sans ${
                 isOverForecasting
                   ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
                   : "bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20"
@@ -116,7 +114,7 @@ export default function KPIOverview({ metrics, loading }) {
 
         {/* Relative WMAPE / MAPE Card */}
         <div className="relative p-5 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft dashed-border-anim group">
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 font-sans">
             <span className="flex items-center gap-1.5 uppercase tracking-wider">
               Volume Error (WMAPE)
             </span>
@@ -125,11 +123,11 @@ export default function KPIOverview({ metrics, loading }) {
             </span>
           </div>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight font-mono text-[#111111] dark:text-[#ffffff]">
+            <span className="text-3xl sm:text-4xl font-bold tracking-tight font-instrument text-[#111111] dark:text-[#ffffff]">
               {wmape != null ? `${Number(wmape).toFixed(1)}%` : '—'}
             </span>
           </div>
-          <div className="mt-2.5 text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between">
+          <div className="mt-2 text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between font-sans">
             <span>Standard MAPE:</span>
             <span className="font-mono text-gray-700 dark:text-gray-300">
               {mape != null ? `${Number(mape).toFixed(1)}%` : '—'}

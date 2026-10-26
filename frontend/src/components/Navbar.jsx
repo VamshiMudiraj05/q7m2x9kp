@@ -20,7 +20,7 @@ export default function Navbar({ theme, onToggleTheme, activeTab, onTabChange, b
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-instrument text-2xl tracking-wide font-bold text-[#111111] dark:text-[#ffffff]">
+              <span className="font-signature text-2xl md:text-3xl tracking-wide text-[#111111] dark:text-[#ffffff]">
                 GridWind <span className="text-[#c2185b] dark:text-[#f3b9c8]">UK</span>
               </span>
               <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300">

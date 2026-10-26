@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, ShieldCheck, Scale, Cpu, AlertCircle } from "lucide-react";
+import { BookOpen, ShieldCheck, Scale, Cpu } from "lucide-react";
 
 export default function MethodologyPanel() {
   return (

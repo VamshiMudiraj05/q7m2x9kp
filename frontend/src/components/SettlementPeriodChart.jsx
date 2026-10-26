@@ -10,9 +10,9 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { Clock, HelpCircle } from "lucide-react";
+import { Clock } from "lucide-react";
 
-function SettlementTooltip({ active, payload, label }) {
+function SettlementTooltip({ active, payload, _label }) {
   if (!active || !payload || !payload.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;

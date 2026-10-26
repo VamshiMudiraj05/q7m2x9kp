@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Table, ArrowUpDown, Calendar } from "lucide-react";
+import { ArrowUpDown, Calendar } from "lucide-react";
 
 export default function DailyScorecardTable({ data, loading }) {
   const [sortField, setSortField] = useState("date");
