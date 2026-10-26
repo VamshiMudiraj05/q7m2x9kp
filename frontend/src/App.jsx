@@ -11,7 +11,7 @@ import SettlementHeatmap from "./components/SettlementHeatmap";
 import LeadTimeChart from "./components/LeadTimeChart";
 import { ErrorState } from "./components/StatusStates";
 import api, { getLeadTimeDecay } from "./services/api";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Calculator, Grid, Wind, Database, BookOpen } from "lucide-react";
 
 export default function App() {
   // Theme state: defaults to dark mode for trading terminal feel
@@ -21,6 +21,24 @@ export default function App() {
 
   // Navigation tab state
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Scroll to top whenever activeTab changes
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  }, [activeTab]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  };
 
   // Filter state (January 2026 evaluation period)
   const [startDate, setStartDate] = useState("2026-01-01");
@@ -117,67 +135,149 @@ export default function App() {
     window.open(url, "_blank");
   };
 
+  // Section-specific metadata tailored to each tab
+  const sectionMeta = {
+    overview: {
+      badge: "UK Wholesale Day-Ahead Desk",
+      source: "Data Source: Elexon BMRS (FUELHH & WINDFOR)",
+      title: "Day-Ahead Wind Forecast & Error Evaluation Portal",
+      subtitle: "Elexon BMRS January 2026 Wholesale Procurement Benchmark",
+      description:
+        "Quantitative decision support for electricity procurement in the UK wholesale market. Evaluates national wind generation forecasts available at gate closure to quantify balancing risk, thermal top-up requirements, and cash-out error margins for January 2026.",
+      Icon: ShieldCheck,
+      showChips: true,
+      showFilter: true,
+    },
+    simulator: {
+      badge: "Balancing Mechanism Risk Engine",
+      source: "Elexon System Buy Price (SBP) Cash-Out Exposure",
+      title: "Imbalance Risk & Procurement Strategy Simulator",
+      subtitle: "Portfolio Financial Cash-Out Exposure & Forward Hedging Analysis",
+      description:
+        "Simulate your wind portfolio's financial cash-out exposure and stress-test bias-correction hedging strategies against January 2026 Elexon settlement prices. Compare naive hedging, bias-corrected procurement, and conservative thermal reserve strategies to minimize cash-out penalties.",
+      Icon: Calculator,
+      showChips: false,
+      showFilter: false,
+    },
+    heatmap: {
+      badge: "Full Month 31-Day Matrix",
+      source: "Cross-Day Hourly Error Intensity & Directionality",
+      title: "Settlement Period Error Intensity Heatmap",
+      subtitle: "Visual Pattern Recognition Across All 31 Days of January 2026",
+      description:
+        "Inspect error magnitudes and over/under-forecast directionality across every single delivery interval of January 2026. Spot systemic morning ramp shortfalls, persistent evening over-forecast clusters, and high-wind storm event anomalies at a glance.",
+      Icon: Grid,
+      showChips: false,
+      showFilter: false,
+    },
+    hourly: {
+      badge: "Intraday Diurnal Cycle",
+      source: "48 Half-Hourly Settlement Periods (SPs) & Lead-Time Horizon",
+      title: "Settlement Period Profiles & Lead-Time Horizon Decay",
+      subtitle: "Time-of-Day Balancing Risk & Forecast Accuracy vs Gate Closure",
+      description:
+        "Evaluate how wind forecast errors systematically vary across the 48 half-hourly settlement periods to identify recurring peak-hours procurement risks, and analyze how forecast skill decays as decision lead time extends from 11 hours to 35 hours.",
+      Icon: Wind,
+      showChips: true,
+      showFilter: true,
+    },
+    daily: {
+      badge: "Daily Settlement Ledger",
+      source: "January 2026 Daily Outturns & Outlier Diagnostics",
+      title: "Daily Performance Scorecard & Imbalance Ledger",
+      subtitle: "Day-by-Day Generation Outturns, Forecast Deviations & Error Ratios",
+      description:
+        "A complete daily ledger of national actual wind generation, day-ahead forecasts, volume deviations, and daily bias. Identifies high-risk trading days in January 2026 that drove the greatest balancing penalties and thermal dispatch requirements.",
+      Icon: Database,
+      showChips: true,
+      showFilter: true,
+    },
+    methodology: {
+      badge: "Regulatory Standards & Governance",
+      source: "Elexon BSC Code & EPEX SPOT Day-Ahead Auction Rules",
+      title: "Data Governance, Cutoff Gates & Metric Methodology",
+      subtitle: "Auditable Mathematical Formulas & Lookahead Bias Prevention",
+      description:
+        "Comprehensive technical documentation covering Elexon BMRS data ingestion pipelines, strict D-1 11:00 UTC auction gate enforcement, deterministic tie-breaking rules, and statistical metric formulas (MAE, RMSE, Bias, WMAPE, and zero-wind protected MAPE).",
+      Icon: BookOpen,
+      showChips: false,
+      showFilter: false,
+    },
+  };
+
+  const currentSection = sectionMeta[activeTab] || sectionMeta.overview;
+  const SectionIcon = currentSection.Icon || ShieldCheck;
+
   return (
     <div className="min-h-screen bg-[#fffefd] dark:bg-[#0b0b0d] text-[#222222] dark:text-[#ededed] bg-project-grid bg-radial-blush flex flex-col font-sans transition-colors duration-200">
       <Navbar
         theme={theme}
         onToggleTheme={toggleTheme}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         backendHealthy={backendHealthy}
         onExportCsv={handleExportCsv}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Hero Section */}
+        {/* Dynamic Section Hero Header */}
         <div className="mb-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#c2185b]/10 text-[#c2185b] dark:text-[#f3b9c8] border border-[#c2185b]/20">
-                <ShieldCheck size={12} />
-                UK Wholesale Day-Ahead Desk
+                <SectionIcon size={12} />
+                {currentSection.badge}
               </span>
               <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                Data Source: Elexon BMRS (FUELHH & WINDFOR)
+                {currentSection.source}
               </span>
             </div>
 
-            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-              <span className="font-semibold text-gray-900 dark:text-gray-100 font-mono">
-                {startDate} → {endDate}
-              </span>
-              <span className="px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-[10px]">
-                Gate: {String(cutoffHour).padStart(2, "0")}:00 UTC D-1
-              </span>
-              <span className="px-2 py-0.5 rounded bg-[#c2185b]/10 text-[#c2185b] dark:text-[#f3b9c8] font-mono text-[10px] font-semibold">
-                {resolution === "half_hourly" ? "1,488 Half-Hourly SPs" : "744 Hourly"}
-              </span>
-            </div>
+            {currentSection.showChips && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                <span className="font-semibold text-gray-900 dark:text-gray-100 font-mono">
+                  {startDate} → {endDate}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-[10px]">
+                  Gate: {String(cutoffHour).padStart(2, "0")}:00 UTC D-1
+                </span>
+                <span className="px-2 py-0.5 rounded bg-[#c2185b]/10 text-[#c2185b] dark:text-[#f3b9c8] font-mono text-[10px] font-semibold">
+                  {resolution === "half_hourly" ? "1,488 Half-Hourly SPs" : "744 Hourly"}
+                </span>
+              </div>
+            )}
           </div>
 
           <h1 className="font-instrument font-bold text-3xl sm:text-4xl md:text-5xl tracking-tight text-gray-900 dark:text-white">
-            Day-Ahead Wind Forecast & Error Evaluation Portal
+            {currentSection.title}
           </h1>
           <div className="font-instrument-sans font-semibold text-base sm:text-lg text-[#c2185b] dark:text-[#f3b9c8] mt-1 tracking-tight">
-            Elexon BMRS January 2026 Wholesale Procurement Benchmark
+            {currentSection.subtitle}
           </div>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">
-            Quantitative decision support for electricity procurement in the UK wholesale market. Evaluates national wind generation forecasts available at gate closure to quantify balancing risk, thermal top-up requirements, and cash-out error margins for January 2026.
+            {currentSection.description}
           </p>
         </div>
 
-        {/* Global Filter Bar */}
-        <FilterControls
-          startDate={startDate}
-          endDate={endDate}
-          onDateChange={handleDateChange}
-          cutoffHour={cutoffHour}
-          onCutoffChange={handleCutoffChange}
-          resolution={resolution}
-          onResolutionChange={handleResolutionChange}
-          onRefresh={loadDashboardData}
-          loading={loading}
-        />
+        {/* 4 Core KPIs first on Dashboard */}
+        {activeTab === "overview" && (
+          <KPIOverview metrics={metrics} loading={loading} />
+        )}
+
+        {/* Filter Controls (rendered only where used) */}
+        {currentSection.showFilter && (
+          <FilterControls
+            startDate={startDate}
+            endDate={endDate}
+            onDateChange={handleDateChange}
+            cutoffHour={cutoffHour}
+            onCutoffChange={handleCutoffChange}
+            resolution={resolution}
+            onResolutionChange={handleResolutionChange}
+            onRefresh={loadDashboardData}
+            loading={loading}
+          />
+        )}
 
         {/* Error State */}
         {error && <ErrorState message={error} onRetry={loadDashboardData} />}
@@ -187,7 +287,6 @@ export default function App() {
           <>
             {activeTab === "overview" && (
               <div className="space-y-6">
-                <KPIOverview metrics={metrics} loading={loading} />
                 <ForecastChart data={alignedSeries} loading={loading} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SettlementPeriodChart data={settlementData} loading={loading} />

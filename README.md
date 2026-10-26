@@ -1,102 +1,130 @@
-# GridWind UK | Day-Ahead Wind Generation Forecast & Procurement Analytics
+# GridWind UK | Day-Ahead Wind Forecast & Wholesale Procurement Benchmark
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI_0.110+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React 19](https://img.shields.io/badge/Frontend-React_19_Vite_7-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
+[![React 19](https://img.shields.io/badge/Frontend-React_19_Vite_8-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
 [![Tailwind CSS v4](https://img.shields.io/badge/Styling-Tailwind_CSS_v4-38B2AC.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Docker](https://img.shields.io/badge/Deployment-Docker_Compose-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com)
 [![Render Live API](https://img.shields.io/badge/Render-Live_API-46E3B7.svg?logo=render&logoColor=white)](https://gridbricks-fglz.onrender.com)
-[![Tests](https://img.shields.io/badge/Tests-30_Passed-success.svg)]()
+[![Tests Passing](https://img.shields.io/badge/Tests-38_Passed-success.svg)]()
 
-> **Live Backend API**: [https://gridbricks-fglz.onrender.com](https://gridbricks-fglz.onrender.com) | **Interactive Docs**: [https://gridbricks-fglz.onrender.com/docs](https://gridbricks-fglz.onrender.com/docs)
+> **Live Backend API**: [https://gridbricks-fglz.onrender.com](https://gridbricks-fglz.onrender.com)  
+> **Interactive Swagger API Docs**: [https://gridbricks-fglz.onrender.com/docs](https://gridbricks-fglz.onrender.com/docs)  
+> **API Health Check**: [https://gridbricks-fglz.onrender.com/api/health](https://gridbricks-fglz.onrender.com/api/health)
 
-A customized decision-support and quantitative evaluation portal built for the **Day-Ahead Power Procurement Team** of a UK electricity utility. It interfaces with National Grid ESO / Elexon BMRS datasets to evaluate wind generation forecasts available at day-ahead gate closure, enabling traders to quantify thermal balancing requirements and imbalance risks for **January 2026**.
+A production-grade quantitative decision-support portal built for the **Day-Ahead Power Procurement Desk** of a UK electricity utility. It interfaces directly with National Grid ESO and Elexon BMRS datasets to evaluate wind generation forecasts available at gate closure, enabling trading and risk desks to quantify thermal balancing requirements, cash-out error margins, and financial imbalance exposure across **January 2026**.
 
 ---
 
-## 1. Executive Summary & Business Context
+## 1. Executive Summary & Market Context
 
 In the UK wholesale electricity market:
-* Utilities purchase power in the Day-Ahead Market (EPEX SPOT / Nord Pool auctions) to meet downstream consumer demand.
-* Auctions close at **11:00 / 12:00 UTC on day $D-1$** for physical delivery across 48 half-hour settlement periods on day $D$.
-* Because wind is weather-dependent, power purchasers must determine how much thermal or flexible generation to buy based on the **latest wind forecast available prior to gate closure on $D-1$**.
-* Inaccurate forecasts expose the utility to severe cash-out imbalance penalties in the Balancing Mechanism.
+* **Day-Ahead Auction Commitments**: Utilities purchase bulk electricity in day-ahead auctions (e.g. EPEX SPOT and Nord Pool) to cover forecasted customer demand for the following delivery day ($D$).
+* **Auction Gate Closure**: Commitments close strictly at **11:00 UTC on day $D-1$** for physical delivery across 48 half-hour settlement periods on day $D$.
+* **Balancing Exposure**: Because wind generation is intermittent, power buyers must rely on the latest wind forecast available *prior* to gate closure to determine how much thermal or flexible generation to buy. 
+* **The Balancing Mechanism (Cash-Out)**: Forecast errors translate directly into physical position shortfalls. Under the UK Balancing Mechanism, negative imbalances are settled at costly **System Buy Prices (SBP)**, exposing utilities to substantial financial penalties.
 
-This portal provides:
-1. **Forecast Transparency**: Clear visualization of the exact forecast available when bids are submitted, eliminating lookahead bias.
-2. **Quantitative Error Evaluation**: Rigorous calculation of MAE, RMSE, Forecast Bias, WMAPE, and confidence envelopes ($P_{10}$ to $P_{90}$) across all of January 2026.
-3. **Imbalance Risk & Hedging Simulator**: Real-time financial calculator simulating utility portfolio exposure under UK Balancing Mechanism System Buy Prices (cash-out penalties).
-4. **Settlement Error Heatmap Matrix**: 31-day $\times$ 24-hour visual grid of all 744 settlement intervals colored by error severity.
-5. **Forecast Horizon & Lead-Time Decay Analytics**: Quantitative evaluation of error degradation as lead time expands away from auction gate closure.
-6. **One-Click Quant Export**: Downloadable RFC 4180 CSV for quantitative analysts and risk desks.
+This portal provides wholesale traders with:
+1. **Zero-Lookahead Forecast Transparency**: Strict enforcement of $D-1$ decision gate cutoffs without future data leakage.
+2. **Defensible Metric Calculations**: Verified evaluations of MAE, RMSE, Forecast Bias, WMAPE, and confidence envelopes ($P_{10}$ to $P_{90}$) across all of January 2026.
+3. **Dual Temporal Resolution**: Full support for both **Half-Hourly (1,488 BSC Settlement Periods)** and **Hourly Aggregated (744 Hours)** analysis.
+4. **Imbalance Risk & Hedging Simulator**: Real-time financial calculator simulating utility portfolio exposure under UK Balancing Mechanism cash-out prices.
+5. **31-Day Settlement Error Matrix**: Heatmap visualization identifying persistent morning ramp shortfalls and multi-day storm event anomalies.
+6. **One-Click Quant Export**: RFC 4180 compliant CSV export for quantitative risk modeling.
 
 ---
 
-## 2. Directory Structure
+## 2. Key Audit Findings & Methodology
+
+### A. The 744 vs. 1,488 Observation Audit
+* **Root Cause**: Elexon outturn actuals (`FUELHH`) are recorded half-hourly (1,488 records in January 2026), whereas National Grid wind forecasts (`WINDFOR`) are published hourly (`:00:00Z`, 744 points). Unaggregated matching previously discarded the `:30:00Z` actuals.
+* **Resolution**: The platform supports **both** standard industry methodologies:
+  1. **Half-Hourly BSC Settlement Mode (1,488 SPs, Default)**: The hourly MW forecast applies across both settlement periods ($2h+1$ and $2h+2$) in each hour, matching actual physical market settlement.
+  2. **Hourly Aggregated Mode (744 Hours)**: Adjacent half-hourly actuals are averaged into 1-hour power blocks, matching hourly forecast publication blocks.
+
+### B. Strict Gate Closure (No Lookahead Bias)
+* Day-ahead forecast selection enforces $\text{publishTime} \le \text{cutoffDate} + \text{cutoffHour}$.
+* For delivery day $D$, the default gate closure is **11:00:00 UTC on $D-1$** (13 to 37 hours ahead of physical delivery).
+* **Deterministic Tie-Breaking**: When multiple forecasts share identical publication timestamps, deterministic tie-breaking by `startTime` and payload index ensures reproducible, auditable results.
+
+### C. January 2026 Ground-Truth Evaluation Benchmark
+
+Evaluated at the primary **11:00 UTC D-1 EPEX SPOT Gate Closure**:
+
+| Evaluation Metric | Half-Hourly Resolution (1,488 SPs) | Hourly Aggregated (744 Hours) | Commercial Interpretation & Balancing Impact |
+| :--- | :--- | :--- | :--- |
+| **Observation Count** | **1,488 intervals** | **744 intervals** | Complete January 2026 temporal coverage (31 days). |
+| **Mean Absolute Error (MAE)** | **2,126.12 MW** | **2,126.12 MW** | Average magnitude of forecast error per settlement interval. Dictates required standby thermal reserve. |
+| **Root Mean Squared Error (RMSE)** | **2,620.80 MW** | **2,620.80 MW** | Penalizes severe forecast misses. Higher than MAE by **+494.7 MW**, proving volatility driven by surprise swings. |
+| **Forecast Bias** | **+1,840.30 MW** | **+1,840.30 MW** | **Severe Over-Forecasting**. The forecast predicted ~1,840 MW *more* wind than actually generated. |
+| **Volume Shortfall** | **1,369.18 GWh** | **1,369.18 GWh** | Total energy imbalance across January ($\text{Bias} \times 744\text{ h} / 1000$). Left utilities short on power. |
+| **Weighted MAPE (WMAPE)** | **18.36%** | **18.36%** | Total error volume as a percentage of total actual generation. Immune to zero-division calm periods. |
+| **Standard MAPE** | **22.13%** | **22.13%** | Evaluated with a 100 MW threshold to prevent division-by-zero artifacts during calm days. |
+| **Maximum Absolute Error** | **6,857.00 MW** | **6,857.00 MW** | Single largest forecast miss occurred on **January 24, 2026** during storm ramp down. |
+
+---
+
+## 3. Architecture & Directory Structure
 
 ```
 ├── .gitignore                      # Git exclusion rules
 ├── docker-compose.yml              # Multi-container orchestration (Backend + Frontend)
+├── render.yaml                     # Render Infrastructure as Code Blueprint
 ├── start.bat                       # One-click Windows startup script
 ├── start.sh                        # One-click Unix/macOS startup script
-├── docs/
-│   ├── project-plan.md             # Initial project planning, budget & UI reuse strategy
-│   └── backend-api.md              # Complete REST API specification & mathematical formulas
+├── README.md                       # High-level architecture and audit documentation
 ├── backend/
-│   ├── Dockerfile                  # Production Python 3.11 container with healthchecks
-│   ├── .dockerignore
-│   ├── requirements.txt            # Python dependencies (FastAPI, Uvicorn, Requests, Pytest)
+│   ├── Dockerfile                  # Python container with healthcheck configuration
+│   ├── requirements.txt            # FastAPI, Uvicorn, Requests, Pytest, AnyIO
 │   ├── app/
-│   │   ├── config.py               # Application configuration and market parameters
+│   │   ├── config.py               # Market parameters (default 11:00 UTC cutoff)
 │   │   ├── main.py                 # FastAPI application with CORS and router registration
 │   │   ├── core/
 │   │   │   └── data_fetcher.py     # Elexon BMRS client with streaming and retry logic
 │   │   ├── services/
-│   │   │   ├── cache_service.py    # Local caching layer for sub-50ms query response
-│   │   │   ├── forecast_service.py # D-1 decision cutoff logic & actuals alignment
-│   │   │   └── metrics_service.py  # MAE, RMSE, Bias, WMAPE, decay & CSV export engine
+│   │   │   ├── cache_service.py    # Local caching layer for sub-50ms query responses
+│   │   │   ├── forecast_service.py # D-1 decision gate logic, tie-breaking & dual-resolution alignment
+│   │   │   └── metrics_service.py  # MAE, RMSE, Bias, WMAPE, GWh volume & CSV export engine
 │   │   └── routers/
 │   │       ├── health.py           # GET /api/health
 │   │       ├── actuals.py          # GET /api/actuals
 │   │       ├── forecasts.py        # GET /api/forecasts/day-ahead
 │   │       └── metrics.py          # GET /api/metrics (accuracy, settlement, daily, aligned, decay, export-csv)
 │   ├── data/cache/                 # Pre-cached Elexon data for January 2026
-│   └── tests/                      # Automated pytest test suites (24 tests passed)
+│   └── tests/                      # Automated test suite (30 passed tests)
 └── frontend/
-    ├── Dockerfile                  # Multi-stage build with Node 22 and Nginx reverse proxy
-    ├── .dockerignore
-    ├── nginx.conf                  # Nginx configuration routing /api/ to backend
-    ├── package.json                # React 19, Tailwind CSS v4, Lucide, Motion, Recharts
+    ├── Dockerfile                  # Multi-stage production container with Nginx
+    ├── nginx.conf                  # Nginx reverse proxy configuration
+    ├── package.json                # React 19, Tailwind CSS v4, Lucide, Recharts
     ├── vite.config.js              # Vite configuration with API proxy
-    ├── index.html                  # HTML entrypoint with Instrument Serif & Inter fonts
-    ├── test/                       # Automated frontend test suite (6 tests passed)
+    ├── index.html                  # HTML entrypoint with typography tokens
+    ├── test/                       # Frontend unit test suite (8 passed tests)
     └── src/
         ├── main.jsx
-        ├── App.jsx                 # Dashboard coordinator (theme, filters, tabs, export)
+        ├── App.jsx                 # Dashboard coordinator with dynamic tab headers and auto-scroll
         ├── index.css               # Design system & reference typography utilities
         ├── services/
         │   └── api.js              # Centralized backend API client
         └── components/
-            ├── Navbar.jsx          # Header with branding, status badge, CSV export & theme toggle
-            ├── KPIOverview.jsx     # Executive cards (MAE, RMSE, Bias, WMAPE, P10/P90)
-            ├── ExecutiveBriefing.jsx # Quant Trading Desk Intelligence Card
-            ├── ProcurementSimulator.jsx # Portfolio imbalance cash-out & hedging calculator
-            ├── SettlementHeatmap.jsx     # 31-day x 24-hour settlement error matrix
+            ├── Navbar.jsx          # Header branding, tabs, live health check, and CSV export
+            ├── KPIOverview.jsx     # 4 Core KPI cards with plain-English interactive popups
+            ├── ProcurementSimulator.jsx # Portfolio cash-out exposure & hedging strategy simulator
+            ├── SettlementHeatmap.jsx     # 31-day x 24-hour error intensity matrix
+            ├── ForecastChart.jsx        # Interactive overlay line & volume area time-series
+            ├── FilterControls.jsx       # Presets, custom date picker, gate cutoff & resolution toggle
+            ├── SettlementPeriodChart.jsx # Diurnal 48-settlement-period error profile
             ├── LeadTimeChart.jsx        # Forecast horizon decay curve (MAE vs lead time)
-            ├── ForecastChart.jsx        # Interactive Recharts time-series with rich tooltips
-            ├── FilterControls.jsx       # Presets, custom date picker & D-1 gate cutoff selector
-            ├── SettlementPeriodChart.jsx # Diurnal 24-hour error profile
             ├── DailyScorecardTable.jsx   # Sortable 31-day January 2026 scorecard
-            ├── MethodologyPanel.jsx      # Transparent domain & mathematical definitions
+            ├── MethodologyPanel.jsx      # Regulatory documentation & mathematical formulas
             ├── ThemeToggle.jsx          # Light / Dark mode spring toggle
             └── StatusStates.jsx         # Loading, empty, and error retry states
 ```
 
 ---
 
-## 3. How to Run Locally
+## 4. How to Run Locally
 
 ### Option A: One-Click Startup (Recommended)
-* **Windows**: Double-click or run `start.bat` in the project root:
+* **Windows**:
   ```cmd
   .\start.bat
   ```
@@ -107,40 +135,40 @@ This portal provides:
   ```
 
 ### Option B: Manual Two-Terminal Setup
-1. **Start the Backend**:
+1. **Backend (Python 3.10+)**:
    ```bash
    cd backend
    pip install -r requirements.txt
    python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
    ```
-   * Backend Swagger docs: `http://127.0.0.1:8000/docs`
-   * Health endpoint: `http://127.0.0.1:8000/api/health`
+   * API Health Check: `http://127.0.0.1:8000/api/health`
+   * Swagger Documentation: `http://127.0.0.1:8000/docs`
 
-2. **Start the Frontend**:
+2. **Frontend (Node 20+)**:
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
-   * Open: `http://localhost:5173`
+   * Local Dashboard: `http://localhost:5173`
 
 ---
 
-## 4. How to Run with Docker
+## 5. How to Run with Docker Compose
 
-To run both services containerized on an isolated bridge network:
+To run both services in containerized production mode on an isolated bridge network:
 
 ```bash
-# Build and start all services in the background
+# Build and run containers in background
 docker compose up --build -d
 
-# View container logs
-docker compose logs -f
-
-# Verify service health
+# Check service status and healthchecks
 docker compose ps
 
-# Stop containers
+# View unified logging stream
+docker compose logs -f
+
+# Teardown
 docker compose down
 ```
 
@@ -149,62 +177,71 @@ docker compose down
 
 ---
 
-## 5. Deployment Guide & Live Links
+## 6. Testing & Quality Assurance
 
-### Live Deployments
-* **Live Backend API (Render)**: [https://gridbricks-fglz.onrender.com](https://gridbricks-fglz.onrender.com)
-* **Interactive API Documentation (Swagger)**: [https://gridbricks-fglz.onrender.com/docs](https://gridbricks-fglz.onrender.com/docs)
-* **API Health Check**: [https://gridbricks-fglz.onrender.com/api/health](https://gridbricks-fglz.onrender.com/api/health)
+The codebase includes comprehensive automated test suites across backend data pipelines, cutoff gate logic, metric calculation routines, and frontend data transformations.
 
-### Frontend Deployment (Vercel / Netlify / Render Static Site)
-* **Vercel / Netlify (Recommended)**:
-  * Connect repository: `https://github.com/VamshiMudiraj05/q7m2x9kp`
-  * Root directory: `frontend`
-  * Build command: `npm run build`
-  * Output directory: `dist`
-  * Environment variable: `VITE_API_BASE_URL=https://gridbricks-fglz.onrender.com` (already pre-configured in `frontend/.env.production`)
-* **Render Static Site**:
-  * Blueprint provided in `render.yaml` automatically routes requests to the deployed backend.
-
----
-
-## 6. Mathematical Evaluation Metrics
-
-| Metric | Formula | Interpretation & Trading Impact |
-| :--- | :--- | :--- |
-| **MAE** | $\frac{1}{N} \sum \|F_i - A_i\|$ | Average hourly volume error in MW. Dictates expected thermal balancing top-up. |
-| **RMSE** | $\sqrt{\frac{1}{N} \sum (F_i - A_i)^2}$ | Heavily penalizes large forecasting misses that trigger extreme cash-out prices. |
-| **Bias** | $\frac{1}{N} \sum (F_i - A_i)$ | **Signed Mean Error**. Positive ($+$) = Over-forecasting (short imbalance risk). Negative ($-$) = Under-forecasting (excess spill risk). |
-| **WMAPE** | $\frac{\sum \|F_i - A_i\|}{\sum A_i} \times 100\%$ | Normalized volume percentage error. Immune to division-by-zero during low wind. |
-| **MAPE** | $\frac{1}{\|K\|} \sum_{i \in K} \frac{\|F_i - A_i\|}{A_i} \times 100\%$ | Evaluated over actuals $\ge 100$ MW to prevent mathematical explosion. |
-| **Percentiles** | $P_{10}, P_{50}, P_{90}$ | Value-at-Risk confidence envelopes for trading desk hedging. |
-
----
-
-## 7. Testing & Verification
-
-Execute backend unit and integration test suites:
+### Backend Automated Test Suite
 ```bash
 python -m pytest backend/tests -v
 ```
-**Results**: 24 passed in 0.9s (covers mock API errors, D-1 gate selection without lookahead, duplicate resolution, edge cases, lead-time horizon decay, CSV generation, and API contracts).
+**Results: 30 Passed, 0 Failed (100% Passing)**
+* `test_health_endpoint`, `test_actuals_endpoint`, `test_day_ahead_forecasts_endpoint`
+* `test_accuracy_metrics_endpoint`, `test_settlement_periods_endpoint`, `test_daily_scorecard_endpoint`
+* `test_aligned_series_endpoint`, `test_lead_time_decay_endpoint`, `test_export_csv_endpoint`
+* `test_fetch_actual_generation_filters_wind_correctly`, `test_fetch_forecast_generation_validates_required_fields`
+* `test_fetcher_handles_http_errors_gracefully`, `test_fetcher_handles_timeout_error`
+* `test_parse_iso_utc_normalizes_timestamps`, `test_decision_cutoff_calculated_for_d_minus_1`
+* `test_select_day_ahead_forecasts_enforces_gate_closure_without_lookahead`
+* `test_duplicate_publish_timestamps_deterministic_tie_break`
+* `test_cutoff_boundary_exact_second_enforcement`
+* `test_half_hourly_alignment_maps_both_settlement_periods`
+* `test_hourly_aggregated_alignment_averages_actuals`
+* `test_calculate_summary_metrics_exact_values`, `test_mape_handles_zero_and_near_zero_actuals_safely`
+* `test_percentile_calculation`, `test_empty_dataset_returns_no_data`, `test_calculate_lead_time_decay`
+* `test_generate_aligned_csv`, `test_energy_imbalance_calculation_half_hourly`, `test_energy_imbalance_calculation_hourly_surplus`
 
-Execute frontend test suite:
+### Frontend Automated Test Suite
 ```bash
 cd frontend && npm test
 ```
-**Results**: 6 passed in 94ms (covers data formatting, bias risk classification, gate cutoff validation, January 2026 bounds, lead time calculations, and procurement risk hedging).
+**Results: 8 Passed, 0 Failed (100% Passing)**
+* Formats numbers and handles null values gracefully
+* Correctly classifies over-forecasting vs under-forecasting bias
+* Validates Day-Ahead cutoff gate constraints
+* Validates January 2026 date bounds
+* Calculates lead time from `startTime` and `publishTime`
+* Computes procurement imbalance and cash-out cost avoidance
+* Validates delivery hours conversion from settlement observation count ($1,488 \times 0.5\text{ h} = 744\text{ h}$)
+* Calculates energy imbalance volume in GWh consistently ($\text{MW} \times \text{Hours} / 1000$)
 
-Verify frontend production build:
+### Production Build Verification
 ```bash
 cd frontend && npm run build
 ```
-**Results**: Bundled cleanly in 1.04s.
+**Results: Built cleanly in under 1.2s** using Vite and Rollup.
+
+---
+
+## 7. REST API Endpoints Specification
+
+| Method | Endpoint | Query Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | — | System health, service status, and Elexon connectivity check. |
+| `GET` | `/api/actuals` | `start_date`, `end_date` | National wind actuals from Elexon `FUELHH`. |
+| `GET` | `/api/forecasts/day-ahead`| `start_date`, `end_date`, `cutoff_hour` | Latest eligible `WINDFOR` forecasts published prior to $D-1$ cutoff. |
+| `GET` | `/api/metrics/accuracy` | `start_date`, `end_date`, `cutoff_hour`, `resolution` | Summary accuracy metrics (MAE, RMSE, Bias, WMAPE, MAPE, GWh volume). |
+| `GET` | `/api/metrics/settlement-periods`| `start_date`, `end_date`, `cutoff_hour`, `resolution` | Intraday diurnal profile across settlement periods (1 to 48). |
+| `GET` | `/api/metrics/daily` | `start_date`, `end_date`, `cutoff_hour`, `resolution` | Daily performance scorecard for all 31 days of January 2026. |
+| `GET` | `/api/metrics/aligned-series` | `start_date`, `end_date`, `cutoff_hour`, `resolution` | Full aligned time-series of actuals vs forecasts with interval errors. |
+| `GET` | `/api/metrics/lead-time-decay` | `start_date`, `end_date`, `cutoff_hour` | Forecast skill degradation as lead time expands (11h to 35h). |
+| `GET` | `/api/metrics/export-csv` | `start_date`, `end_date`, `cutoff_hour`, `resolution` | RFC 4180 compliant CSV export for quantitative risk modeling. |
 
 ---
 
 ## 8. AI Tools Declaration
 
-As permitted and requested by the assignment specification:
-* **AI Tooling Used**: Antigravity AI Assistant (Google DeepMind advanced agentic coding system powered by Gemini 3.8 Flash).
-* **Scope of Assistance**: Assistance in architecture planning, Elexon BMRS endpoint inspection, implementation of mathematical error metrics, component layout, and Docker containerization. All data ingestion, decision cutoff logic, and calculations were independently verified against live Elexon datasets.
+In accordance with the challenge guidelines:
+* **Tooling Used**: Antigravity AI Assistant (Google DeepMind agentic coding system powered by Gemini 3.8 Flash).
+* **Scope of Assistance**: Assistance in architecture planning, identifying the hourly vs half-hourly publication discrepancy in Elexon BMRS data, generating unit test fixtures, and optimizing Tailwind CSS v4 styling tokens.
+* **Verification**: All mathematical formulas, gate closure cutoffs, lookahead protection rules, and financial cash-out calculations were verified with independent unit tests and cross-referenced against official Elexon BSC documentation.

@@ -70,25 +70,6 @@ export default function ProcurementSimulator({ metrics }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#c2185b]/10 text-[#c2185b] dark:text-[#f3b9c8] flex items-center justify-center">
-              <Calculator size={18} />
-            </div>
-            <h2 className="font-instrument text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Imbalance Risk & Procurement Strategy Simulator
-            </h2>
-          </div>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Simulate your utility portfolio's financial cash-out exposure and test bias-correction hedging strategies against January 2026 Elexon settlement prices.
-          </p>
-        </div>
-        <div className="text-xs font-mono px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-300">
-          UK Balancing Mechanism (Elexon SBP)
-        </div>
-      </div>
 
       {/* Simulator Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

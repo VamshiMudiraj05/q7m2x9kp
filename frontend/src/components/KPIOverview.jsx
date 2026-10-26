@@ -6,7 +6,7 @@ function MetricTooltip({
   plainEnglish,
   whatNumberMeans,
   whyItMatters,
-  align = "right",
+  align = "left",
   isOpen,
   onOpen,
   onClose,
@@ -14,14 +14,14 @@ function MetricTooltip({
 }) {
   const alignClass =
     align === "left"
-      ? "left-0"
+      ? "left-2 sm:left-3"
       : align === "center"
       ? "left-1/2 -translate-x-1/2"
-      : "right-0";
+      : "right-2 sm:right-3";
 
   return (
     <div
-      className="relative inline-flex items-center"
+      className="inline-flex items-center"
       onMouseEnter={onOpen}
       onMouseLeave={onClose}
     >
@@ -43,7 +43,7 @@ function MetricTooltip({
 
       {isOpen && (
         <div
-          className={`absolute top-full mt-2 w-72 sm:w-84 p-4 rounded-2xl bg-white/98 dark:bg-[#18181c]/98 backdrop-blur-2xl border border-black/15 dark:border-white/20 shadow-2xl z-50 text-left normal-case tracking-normal font-sans text-xs text-gray-700 dark:text-gray-200 transition-all pointer-events-auto ring-1 ring-black/10 dark:ring-white/10 ${alignClass}`}
+          className={`absolute top-12 w-72 sm:w-80 max-w-[calc(100vw-2.5rem)] p-4 rounded-2xl bg-white/98 dark:bg-[#18181c]/98 backdrop-blur-2xl border border-black/15 dark:border-white/20 shadow-2xl z-50 text-left normal-case tracking-normal font-sans text-xs text-gray-700 dark:text-gray-200 transition-all pointer-events-auto ring-1 ring-black/10 dark:ring-white/10 ${alignClass}`}
           role="tooltip"
           onClick={(e) => e.stopPropagation()}
         >
@@ -151,7 +151,7 @@ export default function KPIOverview({ metrics, loading }) {
             </span>
             <MetricTooltip
               title="Mean Absolute Error (MAE)"
-              align="right"
+              align="left"
               isOpen={activeMetric === "mae"}
               onOpen={() => setActiveMetric("mae")}
               onClose={() => setActiveMetric((prev) => (prev === "mae" ? null : prev))}
@@ -185,7 +185,7 @@ export default function KPIOverview({ metrics, loading }) {
             </span>
             <MetricTooltip
               title="Root Mean Squared Error (RMSE)"
-              align="right"
+              align="left"
               isOpen={activeMetric === "rmse"}
               onOpen={() => setActiveMetric("rmse")}
               onClose={() => setActiveMetric((prev) => (prev === "rmse" ? null : prev))}

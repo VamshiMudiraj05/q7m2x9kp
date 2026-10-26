@@ -28,7 +28,7 @@ export default function FilterControls({
   ];
 
   return (
-    <div className="p-4 sm:p-5 rounded-2xl bg-white/80 dark:bg-[#121214]/80 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft mb-6 space-y-3.5">
+    <div className="relative z-10 p-4 sm:p-5 rounded-2xl bg-white/80 dark:bg-[#121214]/80 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft mb-6 space-y-3.5">
       {/* Row 1: Presets + Refresh Button */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 flex-wrap">
