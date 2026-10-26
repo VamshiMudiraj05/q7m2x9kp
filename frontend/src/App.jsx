@@ -33,6 +33,7 @@ export default function App() {
   const [alignedSeries, setAlignedSeries] = useState([]);
   const [settlementData, setSettlementData] = useState([]);
   const [dailyData, setDailyData] = useState([]);
+  const [leadTimeData, setLeadTimeData] = useState([]);
 
   // UI status states
   const [loading, setLoading] = useState(true);
@@ -69,17 +70,19 @@ export default function App() {
       }
 
       // 2. Fetch parallel dashboard resources
-      const [metricsRes, seriesRes, settlementRes, dailyRes] = await Promise.all([
+      const [metricsRes, seriesRes, settlementRes, dailyRes, decayRes] = await Promise.all([
         api.getAccuracyMetrics(startDate, endDate, cutoffHour),
         api.getAlignedSeries(startDate, endDate, cutoffHour),
         api.getSettlementPeriods(startDate, endDate, cutoffHour),
         api.getDailyScorecard(startDate, endDate, cutoffHour),
+        api.getLeadTimeDecay(startDate, endDate, cutoffHour),
       ]);
 
       setMetrics(metricsRes.metrics);
       setAlignedSeries(seriesRes.data || []);
       setSettlementData(settlementRes.data || []);
       setDailyData(dailyRes.data || []);
+      setLeadTimeData(decayRes.data || []);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
       setError(err.message || "Failed to load dashboard data from backend.");
@@ -176,7 +179,7 @@ export default function App() {
                 <ForecastChart data={alignedSeries} loading={loading} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SettlementPeriodChart data={settlementData} loading={loading} />
-                  <LeadTimeChart startDate={startDate} endDate={endDate} cutoffHour={cutoffHour} />
+                  <LeadTimeChart data={leadTimeData} loading={loading} />
                 </div>
                 <DailyScorecardTable data={dailyData} loading={loading} />
               </div>
@@ -193,7 +196,7 @@ export default function App() {
             {activeTab === "hourly" && (
               <div className="space-y-6">
                 <SettlementPeriodChart data={settlementData} loading={loading} />
-                <LeadTimeChart startDate={startDate} endDate={endDate} cutoffHour={cutoffHour} />
+                <LeadTimeChart data={leadTimeData} loading={loading} />
                 <ForecastChart data={alignedSeries} loading={loading} />
               </div>
             )}

@@ -11,7 +11,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import { Clock, TrendingUp, HelpCircle } from "lucide-react";
-import { api } from "../services/api";
 
 function CustomTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
@@ -46,30 +45,8 @@ function CustomTooltip({ active, payload, label }) {
   return null;
 }
 
-export default function LeadTimeChart({ startDate, endDate, cutoffHour }) {
-  const [decayData, setDecayData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    async function loadDecay() {
-      setLoading(true);
-      try {
-        const res = await api.getLeadTimeDecay(startDate, endDate, cutoffHour);
-        if (isMounted) {
-          setDecayData(res.data || []);
-        }
-      } catch (err) {
-        console.error("Failed to load lead time decay:", err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-    loadDecay();
-    return () => {
-      isMounted = false;
-    };
-  }, [startDate, endDate, cutoffHour]);
+export default function LeadTimeChart({ data = [], loading = false }) {
+  const decayData = data || [];
 
   return (
     <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#121214] border border-black/5 dark:border-white/10 shadow-sm">
