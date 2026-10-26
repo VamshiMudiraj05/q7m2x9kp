@@ -94,8 +94,18 @@ class ForecastService:
                 # No forecast was available prior to the D-1 cutoff for this interval
                 continue
 
-            # Pick candidate with max publishTime
-            eligible.sort(key=lambda x: x[0], reverse=True)
+            # Pick candidate with max publishTime deterministically:
+            # Primary sort: publishTime (latest)
+            # Secondary tie-breaker: generation value
+            # Tertiary tie-breaker: dataset name
+            eligible.sort(
+                key=lambda x: (
+                    x[0],
+                    float(x[1].get("generation", 0.0)),
+                    str(x[1].get("dataset", ""))
+                ),
+                reverse=True
+            )
             chosen_pt_dt, chosen_cand = eligible[0]
 
             lead_time_hours = round((st_dt - chosen_pt_dt).total_seconds() / 3600.0, 2)
@@ -118,61 +128,128 @@ class ForecastService:
         actual_records: List[Dict[str, Any]],
         forecast_records: List[Dict[str, Any]],
         start_date: Optional[str] = None,
-        end_date: Optional[str] = None
+        end_date: Optional[str] = None,
+        resolution: str = "half_hourly"
     ) -> List[Dict[str, Any]]:
         """
-        Aligns Day-Ahead selected forecasts with actual wind generation.
+        Aligns Day-Ahead selected forecasts with actual wind generation outturns.
         
-        Matches on exact startTime (hourly intervals).
-        Computes forecast error: error = forecast - actual.
+        Supports two temporal resolutions:
+        - 'half_hourly' (default): Evaluates each half-hourly settlement period (48 per day,
+          1,488 for January 2026). Since National Grid WINDFOR forecasts are published at hourly
+          resolution, each hourly forecast applies to both half-hourly settlement periods
+          in that hour (e.g. 00:00 applies to SP 1 [00:00] and SP 2 [00:30]).
+        - 'hourly_aggregated': Aggregates the two half-hourly actuals in each hour into an
+          hourly average (A_00 + A_30) / 2 and evaluates against the hourly forecast (744 observations).
+        
+        Error Sign Convention:
+        error = forecast - actual
+        - Positive (> 0): Over-forecasting (utility expected more wind than actual -> leaves trader short)
+        - Negative (< 0): Under-forecasting (utility expected less wind than actual -> spill / surplus)
         """
-        # Map actuals by startTime
-        actuals_by_time: Dict[str, Dict[str, Any]] = {}
-        for act in actual_records:
-            st = act.get("startTime")
-            if not st:
-                continue
-            actuals_by_time[st] = act
-
         day_ahead_forecasts = self.select_day_ahead_forecasts(
             forecast_records,
             start_date=start_date,
             end_date=end_date
         )
+        forecasts_by_hour: Dict[str, Dict[str, Any]] = {
+            fc["startTime"]: fc for fc in day_ahead_forecasts
+        }
+
+        # Filter and validate actuals within requested delivery dates
+        filtered_actuals = []
+        for act in actual_records:
+            st = act.get("startTime")
+            if not st:
+                continue
+            st_dt = parse_iso_utc(st)
+            delivery_date = st_dt.date()
+            if start_date and delivery_date < date.fromisoformat(start_date):
+                continue
+            if end_date and delivery_date > date.fromisoformat(end_date):
+                continue
+            filtered_actuals.append((st_dt, act))
+
+        filtered_actuals.sort(key=lambda x: x[0])
 
         matched_series = []
-        for fc in day_ahead_forecasts:
-            st = fc["startTime"]
-            act = actuals_by_time.get(st)
-            if not act:
-                # Missing actual observation for this settlement interval
-                continue
 
-            act_gen = float(act.get("generation", 0.0))
-            fc_gen = float(fc.get("forecastGeneration", 0.0))
-            err = fc_gen - act_gen  # Positive = over-forecast, Negative = under-forecast
+        if resolution == "hourly_aggregated":
+            # Group half-hourly actuals by hour
+            actuals_by_hour: Dict[str, List[Any]] = {}
+            for st_dt, act in filtered_actuals:
+                hour_str = f"{st_dt.year:04d}-{st_dt.month:02d}-{st_dt.day:02d}T{st_dt.hour:02d}:00:00Z"
+                actuals_by_hour.setdefault(hour_str, []).append((st_dt, act))
 
-            st_dt = parse_iso_utc(st)
-            # Settlement period in UK: half-hour period 1 to 48
-            # Hour 00:00 is SP 1, 01:00 is SP 3, etc.
-            sp = act.get("settlementPeriod")
-            if sp is None:
-                sp = (st_dt.hour * 2) + (1 if st_dt.minute == 0 else 2)
+            for hour_str in sorted(actuals_by_hour.keys()):
+                acts = actuals_by_hour[hour_str]
+                fc = forecasts_by_hour.get(hour_str)
+                if not fc:
+                    continue
 
-            matched_series.append({
-                "startTime": st,
-                "settlementDate": act.get("settlementDate", st_dt.date().isoformat()),
-                "settlementPeriod": sp,
-                "hourOfDay": st_dt.hour,
-                "actualGeneration": act_gen,
-                "forecastGeneration": fc_gen,
-                "error": round(err, 2),
-                "absoluteError": round(abs(err), 2),
-                "squaredError": round(err ** 2, 2),
-                "publishTime": fc["publishTime"],
-                "decisionCutoffTime": fc["decisionCutoffTime"],
-                "leadTimeHours": fc["leadTimeHours"]
-            })
+                act_gens = [float(a[1].get("generation", 0.0)) for a in acts]
+                avg_act_gen = sum(act_gens) / len(act_gens)
+                fc_gen = float(fc["forecastGeneration"])
+                err = fc_gen - avg_act_gen
+
+                h_dt = parse_iso_utc(hour_str)
+                pt_dt = parse_iso_utc(fc["publishTime"])
+                lead_time_hours = round((h_dt - pt_dt).total_seconds() / 3600.0, 2)
+
+                matched_series.append({
+                    "startTime": hour_str,
+                    "settlementDate": acts[0][1].get("settlementDate", h_dt.date().isoformat()),
+                    "settlementPeriod": (h_dt.hour * 2) + 1,
+                    "hourOfDay": h_dt.hour,
+                    "actualGeneration": round(avg_act_gen, 2),
+                    "forecastGeneration": fc_gen,
+                    "error": round(err, 2),
+                    "absoluteError": round(abs(err), 2),
+                    "squaredError": round(err ** 2, 2),
+                    "publishTime": fc["publishTime"],
+                    "decisionCutoffTime": fc["decisionCutoffTime"],
+                    "leadTimeHours": lead_time_hours,
+                    "intervalDurationHours": 1.0,
+                    "resolution": "hourly_aggregated"
+                })
+
+        else:
+            # Default: half-hourly settlement resolution (1,488 observations for Jan 2026)
+            for st_dt, act in filtered_actuals:
+                st = act["startTime"]
+                # Match to the applicable hourly forecast block
+                hour_str = f"{st_dt.year:04d}-{st_dt.month:02d}-{st_dt.day:02d}T{st_dt.hour:02d}:00:00Z"
+                fc = forecasts_by_hour.get(hour_str)
+                if not fc:
+                    continue
+
+                act_gen = float(act.get("generation", 0.0))
+                fc_gen = float(fc["forecastGeneration"])
+                err = fc_gen - act_gen
+
+                sp = act.get("settlementPeriod")
+                if sp is None:
+                    sp = (st_dt.hour * 2) + (1 if st_dt.minute == 0 else 2)
+
+                pt_dt = parse_iso_utc(fc["publishTime"])
+                lead_time_hours = round((st_dt - pt_dt).total_seconds() / 3600.0, 2)
+
+                matched_series.append({
+                    "startTime": st,
+                    "settlementDate": act.get("settlementDate", st_dt.date().isoformat()),
+                    "settlementPeriod": sp,
+                    "hourOfDay": st_dt.hour,
+                    "actualGeneration": act_gen,
+                    "forecastGeneration": fc_gen,
+                    "error": round(err, 2),
+                    "absoluteError": round(abs(err), 2),
+                    "squaredError": round(err ** 2, 2),
+                    "publishTime": fc["publishTime"],
+                    "decisionCutoffTime": fc["decisionCutoffTime"],
+                    "leadTimeHours": lead_time_hours,
+                    "intervalDurationHours": 0.5,
+                    "resolution": "half_hourly"
+                })
 
         matched_series.sort(key=lambda x: x["startTime"])
         return matched_series

@@ -72,5 +72,26 @@ describe('Frontend Data & Formatting Logic', () => {
     assert.ok(savings > 0);
     assert.ok(hedgedTotalCost < naiveCashoutCost);
   });
+
+  test('validates delivery hours conversion from settlement observation count', () => {
+    const calcDeliveryHours = (obsCount, resolution) => {
+      const intervalDuration = resolution === 'half_hourly' ? 0.5 : 1.0;
+      return obsCount * intervalDuration;
+    };
+
+    // 1488 half-hourly settlement periods = 744 delivery hours
+    assert.equal(calcDeliveryHours(1488, 'half_hourly'), 744);
+    // 744 hourly intervals = 744 delivery hours
+    assert.equal(calcDeliveryHours(744, 'hourly_aggregated'), 744);
+  });
+
+  test('calculates energy imbalance volume in GWh consistently', () => {
+    const calcImbalanceGWh = (biasMW, totalDeliveryHours) => {
+      return Math.round((Math.abs(biasMW) * totalDeliveryHours) / 1000);
+    };
+
+    // +1,840.3 MW bias across 744 delivery hours = 1,369 GWh shortfall
+    assert.equal(calcImbalanceGWh(1840.3, 744), 1369);
+  });
 });
 

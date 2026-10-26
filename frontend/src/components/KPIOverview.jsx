@@ -167,7 +167,9 @@ export default function KPIOverview({ metrics, loading }) {
             </div>
             <div className="text-gray-500 dark:text-gray-400">
               <span>Evaluated Intervals: </span>
-              <span className="font-bold text-gray-900 dark:text-gray-200">{observationCount} hrs</span>
+              <span className="font-bold text-gray-900 dark:text-gray-200">
+                {observationCount} {observationCount > 800 ? "Settlement Periods (30m)" : "Hourly Intervals (60m)"}
+              </span>
             </div>
           </div>
         </div>

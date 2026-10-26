@@ -18,6 +18,7 @@ def _get_aligned_data(
     end_date: Optional[str] = None,
     cutoff_hour: int = DEFAULT_DAY_AHEAD_CUTOFF_HOUR,
     cutoff_minute: int = DEFAULT_DAY_AHEAD_CUTOFF_MINUTE,
+    resolution: str = "half_hourly",
     refresh: bool = False
 ):
     cache_service = CacheService()
@@ -29,7 +30,8 @@ def _get_aligned_data(
         actual_records=actuals,
         forecast_records=forecasts,
         start_date=start_date or DEFAULT_START_DATE,
-        end_date=end_date or DEFAULT_END_DATE
+        end_date=end_date or DEFAULT_END_DATE,
+        resolution=resolution
     )
     return aligned
 
@@ -39,6 +41,7 @@ def get_accuracy_metrics(
     end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
     cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23, description="Decision cutoff hour UTC on D-1"),
     cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59, description="Decision cutoff minute UTC on D-1"),
+    resolution: str = Query("half_hourly", pattern="^(half_hourly|hourly_aggregated)$", description="Temporal resolution: 'half_hourly' (1488 settlement periods) or 'hourly_aggregated' (744 hours)"),
     mape_threshold: float = Query(MAPE_MIN_ACTUAL_MW, ge=0.0, description="Minimum actual generation MW for standard MAPE calculation"),
     refresh: bool = Query(False, description="Force refresh from live Elexon BMRS API")
 ):
@@ -47,14 +50,15 @@ def get_accuracy_metrics(
     for power procurement decisions in January 2026.
     """
     try:
-        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute, refresh)
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute, resolution, refresh)
         metrics = MetricsService.calculate_summary_metrics(aligned, mape_threshold=mape_threshold)
         
         return {
             "evaluationPeriod": {
                 "startDate": start_date or DEFAULT_START_DATE,
                 "endDate": end_date or DEFAULT_END_DATE,
-                "dayAheadGate": f"{cutoff_hour:02d}:{cutoff_minute:02d} UTC on D-1"
+                "dayAheadGate": f"{cutoff_hour:02d}:{cutoff_minute:02d} UTC on D-1",
+                "resolution": resolution
             },
             "metrics": metrics
         }
@@ -66,20 +70,22 @@ def get_settlement_period_breakdown(
     start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
     cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23),
-    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59)
+    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59),
+    resolution: str = Query("half_hourly", pattern="^(half_hourly|hourly_aggregated)$")
 ):
     """
     Returns forecast error breakdown across intraday hours and settlement periods.
     Identifies diurnal biases (e.g. morning ramp vs evening peak).
     """
     try:
-        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute)
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute, resolution)
         breakdown = MetricsService.calculate_hourly_settlement_breakdown(aligned)
         return {
             "evaluationPeriod": {
                 "startDate": start_date or DEFAULT_START_DATE,
                 "endDate": end_date or DEFAULT_END_DATE,
-                "dayAheadGate": f"{cutoff_hour:02d}:{cutoff_minute:02d} UTC on D-1"
+                "dayAheadGate": f"{cutoff_hour:02d}:{cutoff_minute:02d} UTC on D-1",
+                "resolution": resolution
             },
             "count": len(breakdown),
             "data": breakdown
@@ -92,13 +98,14 @@ def get_daily_scorecard(
     start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
     cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23),
-    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59)
+    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59),
+    resolution: str = Query("half_hourly", pattern="^(half_hourly|hourly_aggregated)$")
 ):
     """
     Returns day-by-day accuracy scorecard for January 2026.
     """
     try:
-        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute)
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute, resolution)
         scorecard = MetricsService.calculate_daily_scorecard(aligned)
         return {
             "count": len(scorecard),
@@ -112,13 +119,14 @@ def get_aligned_time_series(
     start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
     cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23),
-    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59)
+    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59),
+    resolution: str = Query("half_hourly", pattern="^(half_hourly|hourly_aggregated)$")
 ):
     """
     Returns time-series pairs of (Actual, Forecast, Error) for charts and visualizations.
     """
     try:
-        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute)
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute, resolution)
         return {
             "count": len(aligned),
             "data": aligned
@@ -131,14 +139,15 @@ def get_lead_time_decay(
     start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
     cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23),
-    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59)
+    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59),
+    resolution: str = Query("half_hourly", pattern="^(half_hourly|hourly_aggregated)$")
 ):
     """
     Returns forecast error breakdown across forecast horizon / lead time buckets (hours prior to settlement).
     Reveals error decay characteristics as the delivery window approaches.
     """
     try:
-        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute)
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute, resolution)
         decay_data = MetricsService.calculate_lead_time_decay(aligned)
         return {
             "count": len(decay_data),
@@ -152,15 +161,16 @@ def export_aligned_csv(
     start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
     cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23),
-    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59)
+    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59),
+    resolution: str = Query("half_hourly", pattern="^(half_hourly|hourly_aggregated)$")
 ):
     """
     Exports aligned actuals and forecasts for quantitative analysts and traders as an RFC 4180 CSV file.
     """
     try:
-        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute)
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute, resolution)
         csv_content = MetricsService.generate_aligned_csv(aligned)
-        filename = f"GridWind_UK_Jan2026_Evaluation_{cutoff_hour:02d}{cutoff_minute:02d}Gate.csv"
+        filename = f"GridWind_UK_Jan2026_Evaluation_{cutoff_hour:02d}{cutoff_minute:02d}Gate_{resolution}.csv"
         return Response(
             content=csv_content,
             media_type="text/csv",

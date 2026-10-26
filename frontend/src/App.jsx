@@ -27,6 +27,7 @@ export default function App() {
   const [startDate, setStartDate] = useState("2026-01-01");
   const [endDate, setEndDate] = useState("2026-01-31");
   const [cutoffHour, setCutoffHour] = useState(11); // 11:00 UTC on D-1
+  const [resolution, setResolution] = useState("half_hourly"); // "half_hourly" (1,488 SPs) or "hourly_aggregated" (744 hours)
 
   // Data states
   const [metrics, setMetrics] = useState(null);
@@ -75,11 +76,11 @@ export default function App() {
         : getLeadTimeDecay;
 
       const [metricsRes, seriesRes, settlementRes, dailyRes, decayRes] = await Promise.all([
-        api.getAccuracyMetrics(startDate, endDate, cutoffHour),
-        api.getAlignedSeries(startDate, endDate, cutoffHour),
-        api.getSettlementPeriods(startDate, endDate, cutoffHour),
-        api.getDailyScorecard(startDate, endDate, cutoffHour),
-        decayFetcher(startDate, endDate, cutoffHour),
+        api.getAccuracyMetrics(startDate, endDate, cutoffHour, 0, 100, resolution),
+        api.getAlignedSeries(startDate, endDate, cutoffHour, 0, resolution),
+        api.getSettlementPeriods(startDate, endDate, cutoffHour, 0, resolution),
+        api.getDailyScorecard(startDate, endDate, cutoffHour, 0, resolution),
+        decayFetcher(startDate, endDate, cutoffHour, 0, resolution),
       ]);
 
       setMetrics(metricsRes.metrics);
@@ -93,7 +94,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, cutoffHour]);
+  }, [startDate, endDate, cutoffHour, resolution]);
 
   useEffect(() => {
     loadDashboardData();
@@ -108,8 +109,12 @@ export default function App() {
     setCutoffHour(newHour);
   };
 
+  const handleResolutionChange = (newRes) => {
+    setResolution(newRes);
+  };
+
   const handleExportCsv = () => {
-    const url = api.getExportCsvUrl(startDate, endDate, cutoffHour);
+    const url = api.getExportCsvUrl(startDate, endDate, cutoffHour, 0, resolution);
     window.open(url, "_blank");
   };
 
@@ -145,6 +150,9 @@ export default function App() {
               <span className="px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-[10px]">
                 Gate: {String(cutoffHour).padStart(2, "0")}:00 UTC D-1
               </span>
+              <span className="px-2 py-0.5 rounded bg-[#c2185b]/10 text-[#c2185b] dark:text-[#f3b9c8] font-mono text-[10px] font-semibold">
+                {resolution === "half_hourly" ? "1,488 Half-Hourly SPs" : "744 Hourly"}
+              </span>
             </div>
           </div>
 
@@ -166,6 +174,8 @@ export default function App() {
           onDateChange={handleDateChange}
           cutoffHour={cutoffHour}
           onCutoffChange={handleCutoffChange}
+          resolution={resolution}
+          onResolutionChange={handleResolutionChange}
           onRefresh={loadDashboardData}
           loading={loading}
         />

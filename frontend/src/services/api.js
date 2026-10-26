@@ -68,58 +68,64 @@ export async function getDayAheadForecasts(startDate, endDate, cutoffHour = 11, 
   });
 }
 
-export async function getAccuracyMetrics(startDate, endDate, cutoffHour = 11, cutoffMinute = 0, mapeThreshold = 100) {
+export async function getAccuracyMetrics(startDate, endDate, cutoffHour = 11, cutoffMinute = 0, mapeThreshold = 100, resolution = 'half_hourly') {
   return request('/api/metrics/accuracy', {
     start_date: startDate,
     end_date: endDate,
     cutoff_hour: cutoffHour,
     cutoff_minute: cutoffMinute,
     mape_threshold: mapeThreshold,
+    resolution,
   });
 }
 
-export async function getSettlementPeriods(startDate, endDate, cutoffHour = 11, cutoffMinute = 0) {
+export async function getSettlementPeriods(startDate, endDate, cutoffHour = 11, cutoffMinute = 0, resolution = 'half_hourly') {
   return request('/api/metrics/settlement-periods', {
     start_date: startDate,
     end_date: endDate,
     cutoff_hour: cutoffHour,
     cutoff_minute: cutoffMinute,
+    resolution,
   });
 }
 
-export async function getDailyScorecard(startDate, endDate, cutoffHour = 11, cutoffMinute = 0) {
+export async function getDailyScorecard(startDate, endDate, cutoffHour = 11, cutoffMinute = 0, resolution = 'half_hourly') {
   return request('/api/metrics/daily', {
     start_date: startDate,
     end_date: endDate,
     cutoff_hour: cutoffHour,
     cutoff_minute: cutoffMinute,
+    resolution,
   });
 }
 
-export async function getAlignedSeries(startDate, endDate, cutoffHour = 11, cutoffMinute = 0) {
+export async function getAlignedSeries(startDate, endDate, cutoffHour = 11, cutoffMinute = 0, resolution = 'half_hourly') {
   return request('/api/metrics/aligned-series', {
     start_date: startDate,
     end_date: endDate,
     cutoff_hour: cutoffHour,
     cutoff_minute: cutoffMinute,
+    resolution,
   });
 }
 
-export async function getLeadTimeDecay(startDate, endDate, cutoffHour = 11, cutoffMinute = 0) {
+export async function getLeadTimeDecay(startDate, endDate, cutoffHour = 11, cutoffMinute = 0, resolution = 'half_hourly') {
   return request('/api/metrics/lead-time-decay', {
     start_date: startDate,
     end_date: endDate,
     cutoff_hour: cutoffHour,
     cutoff_minute: cutoffMinute,
+    resolution,
   });
 }
 
-export function getExportCsvUrl(startDate, endDate, cutoffHour = 11, cutoffMinute = 0) {
+export function getExportCsvUrl(startDate, endDate, cutoffHour = 11, cutoffMinute = 0, resolution = 'half_hourly') {
   const url = new URL(`${API_BASE_URL}/api/metrics/export-csv`, window.location.origin);
   if (startDate) url.searchParams.append('start_date', startDate);
   if (endDate) url.searchParams.append('end_date', endDate);
   url.searchParams.append('cutoff_hour', cutoffHour);
   url.searchParams.append('cutoff_minute', cutoffMinute);
+  url.searchParams.append('resolution', resolution);
   return url.toString();
 }
 

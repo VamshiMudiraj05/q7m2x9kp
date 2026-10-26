@@ -116,3 +116,40 @@ def test_generate_aligned_csv():
     assert "1650.0" in csv_str
     assert "150.0" in csv_str
 
+def test_energy_imbalance_calculation_half_hourly():
+    """
+    Verify energy volume conversion:
+    4 observations with intervalDurationHours = 0.5 (2.0 delivery hours).
+    Errors: [+200, +200, +200, +200] -> Bias = +200.0 MW
+    Energy = 200 MW * 2.0 h / 1000 = 0.40 GWh (Net negative / short position).
+    """
+    sample_data = [
+        {"actualGeneration": 1000.0, "forecastGeneration": 1200.0, "error": 200.0, "absoluteError": 200.0, "squaredError": 40000.0, "intervalDurationHours": 0.5, "resolution": "half_hourly"}
+        for _ in range(4)
+    ]
+    res = MetricsService.calculate_summary_metrics(sample_data)
+    assert res["observationCount"] == 4
+    assert res["intervalDurationHours"] == 0.5
+    assert res["totalDeliveryHours"] == 2.0
+    assert res["bias"] == 200.0
+    assert res["totalEnergyImbalanceGWh"] == 0.4
+    assert res["imbalanceExposureDirection"] == "SHORT_NET_NEGATIVE"
+
+def test_energy_imbalance_calculation_hourly_surplus():
+    """
+    Verify under-forecasting leads to surplus (long position):
+    2 observations with intervalDurationHours = 1.0 (2.0 delivery hours).
+    Errors: [-500, -500] -> Bias = -500.0 MW
+    Energy = -500 MW * 2.0 h / 1000 = -1.0 GWh.
+    """
+    sample_data = [
+        {"actualGeneration": 2000.0, "forecastGeneration": 1500.0, "error": -500.0, "absoluteError": 500.0, "squaredError": 250000.0, "intervalDurationHours": 1.0, "resolution": "hourly_aggregated"}
+        for _ in range(2)
+    ]
+    res = MetricsService.calculate_summary_metrics(sample_data)
+    assert res["totalDeliveryHours"] == 2.0
+    assert res["bias"] == -500.0
+    assert res["totalEnergyImbalanceGWh"] == -1.0
+    assert res["imbalanceExposureDirection"] == "SURPLUS_LONG"
+
+

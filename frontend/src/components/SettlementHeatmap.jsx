@@ -5,7 +5,7 @@ export default function SettlementHeatmap({ alignedSeries = [] }) {
   const [filterMode, setFilterMode] = useState("all"); // "all", "severe_over", "severe_under", "accurate"
   const [hoveredCell, setHoveredCell] = useState(null);
 
-  // Group aligned data into day -> hour map
+  // Group aligned data into day -> hour map (combining both settlement periods per hour when in half-hourly mode)
   const { matrix, days, hours } = useMemo(() => {
     const daysSet = new Set();
     const dayMap = {};
@@ -17,7 +17,22 @@ export default function SettlementHeatmap({ alignedSeries = [] }) {
 
       daysSet.add(day);
       if (!dayMap[day]) dayMap[day] = {};
-      dayMap[day][hour] = item;
+      if (!dayMap[day][hour]) {
+        dayMap[day][hour] = item;
+      } else {
+        const prev = dayMap[day][hour];
+        const combinedActual = Math.round((prev.actualGeneration + item.actualGeneration) / 2);
+        const combinedError = Math.round((prev.error + item.error) / 2);
+        const combinedAbsError = Math.round((prev.absoluteError + item.absoluteError) / 2);
+        dayMap[day][hour] = {
+          ...item,
+          actualGeneration: combinedActual,
+          error: combinedError,
+          absoluteError: combinedAbsError,
+          settlementPeriodText: `SP ${prev.settlementPeriod} & ${item.settlementPeriod}`,
+          spDetails: [prev, item],
+        };
+      }
     });
 
     const sortedDays = Array.from(daysSet).sort();
@@ -76,7 +91,7 @@ export default function SettlementHeatmap({ alignedSeries = [] }) {
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Visual breakdown of all 744 hourly settlement intervals across January 2026. Hover over any cell for full dispatch & forecast metadata.
+            Visual breakdown of all {alignedSeries.length} settlement observations across January 2026. Hover over any cell for full dispatch & forecast metadata.
           </p>
         </div>
 

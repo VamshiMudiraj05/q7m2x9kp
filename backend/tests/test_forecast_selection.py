@@ -95,3 +95,103 @@ def test_handles_missing_forecast_gracefully():
 
     aligned = svc.align_forecast_and_actuals(actuals, forecasts)
     assert len(aligned) == 0
+
+def test_duplicate_publish_timestamps_deterministic_tie_break():
+    """
+    When multiple forecast candidates for the same delivery interval have identical
+    publishTime, selection must be strictly deterministic across repeated runs.
+    """
+    svc = ForecastService(cutoff_hour=11, cutoff_minute=0)
+    candidates = [
+        {"dataset": "WINDFOR", "startTime": "2026-01-02T14:00:00Z", "publishTime": "2026-01-01T09:30:00Z", "generation": 12000.0},
+        {"dataset": "WINDFOR", "startTime": "2026-01-02T14:00:00Z", "publishTime": "2026-01-01T09:30:00Z", "generation": 12500.0},
+    ]
+
+    selected_1 = svc.select_day_ahead_forecasts(candidates)
+    selected_2 = svc.select_day_ahead_forecasts(list(reversed(candidates)))
+
+    assert len(selected_1) == 1
+    assert len(selected_2) == 1
+    assert selected_1[0]["forecastGeneration"] == selected_2[0]["forecastGeneration"]
+    assert selected_1[0]["forecastGeneration"] == 12500.0
+
+def test_cutoff_boundary_exact_second_enforcement():
+    """
+    Verify boundary condition:
+    Cutoff on D-1 is 11:00:00Z.
+    - Publication at 11:00:00Z is ELIGIBLE (<= cutoff).
+    - Publication at 11:00:01Z is INELIGIBLE (> cutoff, lookahead).
+    """
+    svc = ForecastService(cutoff_hour=11, cutoff_minute=0)
+    target_st = "2026-01-05T12:00:00Z"
+
+    # Eligible: exactly at 11:00:00Z
+    cand_eligible = [
+        {"dataset": "WINDFOR", "startTime": target_st, "publishTime": "2026-01-04T11:00:00Z", "generation": 10000.0}
+    ]
+    res_eligible = svc.select_day_ahead_forecasts(cand_eligible)
+    assert len(res_eligible) == 1
+    assert res_eligible[0]["forecastGeneration"] == 10000.0
+
+    # Ineligible: 1 second past cutoff
+    cand_ineligible = [
+        {"dataset": "WINDFOR", "startTime": target_st, "publishTime": "2026-01-04T11:00:01Z", "generation": 10500.0}
+    ]
+    res_ineligible = svc.select_day_ahead_forecasts(cand_ineligible)
+    assert len(res_ineligible) == 0
+
+def test_half_hourly_alignment_maps_both_settlement_periods():
+    """
+    Hourly WINDFOR forecast for 10:00:00Z applies to both:
+    - Settlement Period 21 (10:00:00Z)
+    - Settlement Period 22 (10:30:00Z)
+    Each settlement period evaluates against its own actual generation.
+    """
+    svc = ForecastService(cutoff_hour=11, cutoff_minute=0)
+    forecasts = [
+        {"startTime": "2026-01-02T10:00:00Z", "publishTime": "2026-01-01T09:30:00Z", "generation": 12000.0}
+    ]
+    actuals = [
+        {"startTime": "2026-01-02T10:00:00Z", "settlementDate": "2026-01-02", "settlementPeriod": 21, "generation": 10000.0},
+        {"startTime": "2026-01-02T10:30:00Z", "settlementDate": "2026-01-02", "settlementPeriod": 22, "generation": 10500.0},
+    ]
+
+    aligned = svc.align_forecast_and_actuals(actuals, forecasts, resolution="half_hourly")
+
+    assert len(aligned) == 2
+    # First half-hour (SP 21)
+    assert aligned[0]["settlementPeriod"] == 21
+    assert aligned[0]["actualGeneration"] == 10000.0
+    assert aligned[0]["forecastGeneration"] == 12000.0
+    assert aligned[0]["error"] == 2000.0
+    assert aligned[0]["intervalDurationHours"] == 0.5
+
+    # Second half-hour (SP 22)
+    assert aligned[1]["settlementPeriod"] == 22
+    assert aligned[1]["actualGeneration"] == 10500.0
+    assert aligned[1]["forecastGeneration"] == 12000.0
+    assert aligned[1]["error"] == 1500.0
+    assert aligned[1]["intervalDurationHours"] == 0.5
+
+def test_hourly_aggregated_alignment_averages_actuals():
+    """
+    In hourly_aggregated mode, the two half-hours (10000 and 10500) average to 10250 MW.
+    Evaluating against 12000 MW forecast yields error = +1750 MW.
+    """
+    svc = ForecastService(cutoff_hour=11, cutoff_minute=0)
+    forecasts = [
+        {"startTime": "2026-01-02T10:00:00Z", "publishTime": "2026-01-01T09:30:00Z", "generation": 12000.0}
+    ]
+    actuals = [
+        {"startTime": "2026-01-02T10:00:00Z", "settlementDate": "2026-01-02", "settlementPeriod": 21, "generation": 10000.0},
+        {"startTime": "2026-01-02T10:30:00Z", "settlementDate": "2026-01-02", "settlementPeriod": 22, "generation": 10500.0},
+    ]
+
+    aligned = svc.align_forecast_and_actuals(actuals, forecasts, resolution="hourly_aggregated")
+
+    assert len(aligned) == 1
+    assert aligned[0]["actualGeneration"] == 10250.0
+    assert aligned[0]["forecastGeneration"] == 12000.0
+    assert aligned[0]["error"] == 1750.0
+    assert aligned[0]["intervalDurationHours"] == 1.0
+

@@ -14,7 +14,7 @@ export default function ProcurementSimulator({ metrics }) {
   const nationalAvgForecast = metrics?.totalForecastGenerationMW && metrics?.observationCount
     ? metrics.totalForecastGenerationMW / metrics.observationCount
     : 13340;
-  const totalHours = metrics?.observationCount || 744;
+  const totalHours = metrics?.totalDeliveryHours || (metrics?.observationCount === 1488 ? 744 : (metrics?.observationCount || 744));
 
   const simulationResults = useMemo(() => {
     // Portfolio average actual vs forecast
@@ -336,8 +336,8 @@ export default function ProcurementSimulator({ metrics }) {
             <div className="mt-5 p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/10 text-xs text-gray-600 dark:text-gray-400 flex items-start gap-2.5">
               <Shield size={16} className="text-[#c2185b] dark:text-[#f3b9c8] mt-0.5 shrink-0" />
               <div>
-                <span className="font-semibold text-gray-900 dark:text-white">Commercial Takeaway:</span>{" "}
-                Because the Elexon WINDFOR forecast exhibited a systematic positive bias of +1,840 MW in January 2026, an unhedged utility faces massive cash-out penalties under the BSC balancing mechanism. Pre-hedging with baseload forward contracts eliminates 85%+ of this imbalance volatility.
+                <span className="font-semibold text-gray-900 dark:text-white">Commercial Takeaway & Analytical Disclaimer:</span>{" "}
+                Because the Elexon WINDFOR forecast exhibited a systematic positive bias of +1,840 MW in January 2026, an unhedged utility faces cash-out exposure under the BSC balancing mechanism. Pre-hedging the expected bias volume with forward contracts mitigates cash-out volatility in this model. <em>Note: Cash-out SBP and forward prices are user-controlled illustrative scenario inputs for strategic simulation, not audited accounting records.</em>
               </div>
             </div>
           </div>

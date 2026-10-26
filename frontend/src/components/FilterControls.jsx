@@ -7,6 +7,8 @@ export default function FilterControls({
   onDateChange,
   cutoffHour,
   onCutoffChange,
+  resolution = "half_hourly",
+  onResolutionChange,
   onRefresh,
   loading,
 }) {
@@ -64,7 +66,7 @@ export default function FilterControls({
         </button>
       </div>
 
-      {/* Row 2: Date Pickers & Day-Ahead Gate */}
+      {/* Row 2: Date Pickers, Day-Ahead Gate, & Temporal Resolution */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-black/5 dark:border-white/10">
         <div className="flex flex-wrap items-center gap-3">
           {/* Custom Date Pickers */}
@@ -104,6 +106,23 @@ export default function FilterControls({
                   {opt.label}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Resolution Selector: Half-Hourly vs Hourly Aggregated */}
+          <div className="flex items-center gap-1.5 text-xs bg-black/[0.03] dark:bg-white/[0.04] px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10">
+            <span className="text-gray-500 dark:text-gray-400 text-[11px]">Resolution:</span>
+            <select
+              value={resolution}
+              onChange={(e) => onResolutionChange && onResolutionChange(e.target.value)}
+              className="bg-transparent text-gray-900 dark:text-gray-100 font-semibold text-xs focus:outline-none cursor-pointer"
+            >
+              <option value="half_hourly" className="dark:bg-[#18181b]">
+                Half-Hourly (48 SP/Day • 1,488 Total) [BSC Standard]
+              </option>
+              <option value="hourly_aggregated" className="dark:bg-[#18181b]">
+                Hourly Aggregated (24h/Day • 744 Total)
+              </option>
             </select>
           </div>
         </div>

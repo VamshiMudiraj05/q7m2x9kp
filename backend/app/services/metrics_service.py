@@ -94,8 +94,19 @@ class MetricsService:
             "p90": calculate_percentile(sorted_errors, 90.0),
         }
 
+        # Energy & Imbalance exposure calculations
+        interval_duration = aligned_data[0].get("intervalDurationHours", 0.5) if aligned_data else 0.5
+        resolution_mode = aligned_data[0].get("resolution", "half_hourly") if aligned_data else "half_hourly"
+        total_delivery_hours = round(n * interval_duration, 2)
+        # Net Energy Imbalance Volume in GWh: Bias (MW) * Hours / 1000
+        net_imbalance_energy_gwh = round((bias * total_delivery_hours) / 1000.0, 2)
+        total_abs_energy_gwh = round((mae * total_delivery_hours) / 1000.0, 2)
+
         return {
             "observationCount": n,
+            "resolution": resolution_mode,
+            "intervalDurationHours": interval_duration,
+            "totalDeliveryHours": total_delivery_hours,
             "mae": round(mae, 2),
             "rmse": round(rmse, 2),
             "bias": round(bias, 2),
@@ -106,13 +117,21 @@ class MetricsService:
             "totalActualGenerationMW": round(tot_actual, 2),
             "totalForecastGenerationMW": round(tot_forecast, 2),
             "maxAbsoluteErrorMW": round(max(abs_errors), 2),
+            "totalEnergyImbalanceGWh": net_imbalance_energy_gwh,
+            "totalAbsEnergyDeviationGWh": total_abs_energy_gwh,
+            "imbalanceExposureDirection": (
+                "SHORT_NET_NEGATIVE" if bias > 0
+                else ("SURPLUS_LONG" if bias < 0 else "BALANCED")
+            ),
             "errorPercentiles": percentiles,
             "units": {
-                "mae": "MW",
-                "rmse": "MW",
-                "bias": "MW (Positive = Over-forecast, Negative = Under-forecast)",
-                "wmape": "% of total volume",
-                "mape": "% (filtered for actuals >= threshold)"
+                "mae": "MW (Mean Absolute Error)",
+                "rmse": "MW (Root Mean Squared Error)",
+                "bias": "MW (Positive = Over-forecast / Short exposure, Negative = Under-forecast / Surplus)",
+                "wmape": "% of total volume (Sum|Err| / Sum|Act|)",
+                "mape": "% (Mean Absolute Percentage Error for Actuals >= threshold)",
+                "totalEnergyImbalanceGWh": "GWh (Physical volume shortfall: Bias MW * Total Delivery Hours / 1000)",
+                "totalDeliveryHours": "Hours (Sum of interval durations across evaluated observations)"
             },
             "status": "VALID"
         }
