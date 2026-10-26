@@ -1,0 +1,44 @@
+services:
+  # -------------------------------------------------------------
+  # 1. FastAPI Python Backend Web Service
+  # -------------------------------------------------------------
+  - type: web
+    name: gridwind-uk-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: ELEXON_BASE_URL
+        value: https://data.elexon.co.uk/bmrs/api/v1
+      - key: REQUEST_TIMEOUT_SECONDS
+        value: "30"
+      - key: DEFAULT_DAY_AHEAD_CUTOFF_HOUR
+        value: "11"
+      - key: DEFAULT_DAY_AHEAD_CUTOFF_MINUTE
+        value: "0"
+      - key: MAPE_MIN_ACTUAL_MW
+        value: "100.0"
+
+  # -------------------------------------------------------------
+  # 2. React / Vite Frontend Static Site
+  # -------------------------------------------------------------
+  - type: web
+    name: gridwind-uk-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: gridwind-uk-backend
+          property: host
