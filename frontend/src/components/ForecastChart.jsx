@@ -112,9 +112,9 @@ export default function ForecastChart({ data, loading }) {
     <div className="p-5 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft mb-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h2 className="font-instrument text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <span>Day-Ahead Forecast vs Outturn Actual Generation</span>
-            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400 font-sans">
               ({chartData.length} settlement intervals)
             </span>
           </h2>

@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gridwind-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - ELEXON_BASE_URL=https://data.elexon.co.uk/bmrs/api/v1
+      - REQUEST_TIMEOUT_SECONDS=30
+      - DEFAULT_DAY_AHEAD_CUTOFF_HOUR=11
+      - DEFAULT_DAY_AHEAD_CUTOFF_MINUTE=0
+      - MAPE_MIN_ACTUAL_MW=100.0
+    restart: unless-stopped
+    networks:
+      - gridwind-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gridwind-frontend
+    ports:
+      - "3000:80"
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - gridwind-network
+
+networks:
+  gridwind-network:
+    driver: bridge

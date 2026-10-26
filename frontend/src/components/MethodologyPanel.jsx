@@ -6,8 +6,8 @@ export default function MethodologyPanel() {
     <div className="space-y-6 mb-8 text-xs font-sans text-gray-700 dark:text-gray-300">
       {/* Overview Card */}
       <div className="p-6 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft">
-        <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-900 dark:text-gray-100">
-          <BookOpen size={18} className="text-[#c2185b] dark:text-[#f3b9c8]" />
+        <div className="flex items-center gap-2 mb-3 text-2xl font-semibold font-instrument text-gray-900 dark:text-gray-100">
+          <BookOpen size={22} className="text-[#c2185b] dark:text-[#f3b9c8]" />
           <span>UK Day-Ahead Power Market Evaluation Methodology</span>
         </div>
         <p className="leading-relaxed mb-4">
@@ -39,8 +39,8 @@ export default function MethodologyPanel() {
 
       {/* D-1 Decision Gate Closure Card */}
       <div className="p-6 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft">
-        <div className="flex items-center gap-2 mb-2 text-sm font-bold text-gray-900 dark:text-gray-100">
-          <ShieldCheck size={18} className="text-[#c2185b] dark:text-[#f3b9c8]" />
+        <div className="flex items-center gap-2 mb-2 text-2xl font-semibold font-instrument text-gray-900 dark:text-gray-100">
+          <ShieldCheck size={22} className="text-[#c2185b] dark:text-[#f3b9c8]" />
           <span>Operational Day-Ahead Decision Gate (No Lookahead Bias)</span>
         </div>
         <p className="leading-relaxed mb-3">
@@ -61,7 +61,7 @@ export default function MethodologyPanel() {
 
       {/* Error Metrics Mathematical Definitions */}
       <div className="p-6 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">
+        <h3 className="text-2xl font-semibold font-instrument text-gray-900 dark:text-gray-100 mb-3">
           Quantitative Error Metrics & Financial Impact
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

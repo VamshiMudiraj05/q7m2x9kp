@@ -131,7 +131,7 @@ export default function App() {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="font-instrument font-semibold text-3xl sm:text-4xl md:text-5xl tracking-tight text-gray-900 dark:text-white">
             Day-Ahead Wind Forecast & Error Evaluation Portal
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed">

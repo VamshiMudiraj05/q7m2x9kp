@@ -66,7 +66,7 @@ export default function SettlementPeriodChart({ data, loading }) {
     <div className="p-5 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft mb-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h3 className="font-instrument text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Clock size={16} className="text-[#c2185b] dark:text-[#f3b9c8]" />
             <span>Intraday Settlement Period Accuracy Profile</span>
           </h3>
