@@ -97,4 +97,22 @@ export const api = {
       cutoff_hour: cutoffHour,
       cutoff_minute: cutoffMinute,
     }),
+
+  getLeadTimeDecay: (startDate, endDate, cutoffHour = 11, cutoffMinute = 0) =>
+    request('/api/metrics/lead-time-decay', {
+      start_date: startDate,
+      end_date: endDate,
+      cutoff_hour: cutoffHour,
+      cutoff_minute: cutoffMinute,
+    }),
+
+  getExportCsvUrl: (startDate, endDate, cutoffHour = 11, cutoffMinute = 0) => {
+    const url = new URL(`${API_BASE_URL}/api/metrics/export-csv`, window.location.origin);
+    if (startDate) url.searchParams.append('start_date', startDate);
+    if (endDate) url.searchParams.append('end_date', endDate);
+    url.searchParams.append('cutoff_hour', cutoffHour);
+    url.searchParams.append('cutoff_minute', cutoffMinute);
+    return url.toString();
+  },
 };
+

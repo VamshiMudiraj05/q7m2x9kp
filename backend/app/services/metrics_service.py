@@ -194,3 +194,97 @@ class MetricsService:
             })
 
         return scorecard
+
+    @staticmethod
+    def calculate_lead_time_decay(
+        aligned_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Groups aligned forecast-actual pairs into lead time horizon buckets
+        to evaluate forecast decay as the settlement interval approaches.
+        """
+        buckets_def = [
+            ("12h - 16h", 12.0, 16.0),
+            ("16h - 20h", 16.0, 20.0),
+            ("20h - 24h", 20.0, 24.0),
+            ("24h - 28h", 24.0, 28.0),
+            ("28h - 32h", 28.0, 32.0),
+            ("32h - 36h", 32.0, 36.0),
+            ("36h+", 36.0, 999.0),
+        ]
+
+        bucket_data: Dict[str, List[Dict[str, Any]]] = {b[0]: [] for b in buckets_def}
+        for d in aligned_data:
+            lt = d.get("leadTimeHours", 0.0)
+            for label, low, high in buckets_def:
+                if (label == "36h+" and lt >= low) or (low <= lt < high):
+                    bucket_data[label].append(d)
+                    break
+
+        results = []
+        for label, low, high in buckets_def:
+            items = bucket_data[label]
+            if not items:
+                continue
+            n = len(items)
+            mae = sum(x["absoluteError"] for x in items) / n
+            rmse = math.sqrt(sum(x["squaredError"] for x in items) / n)
+            bias = sum(x["error"] for x in items) / n
+            tot_act = sum(x["actualGeneration"] for x in items)
+            wmape = (sum(x["absoluteError"] for x in items) / tot_act * 100.0) if tot_act > 0 else None
+            avg_lt = sum(x.get("leadTimeHours", 0.0) for x in items) / n
+
+            results.append({
+                "bucket": label,
+                "minHours": low,
+                "maxHours": high if high < 900 else None,
+                "avgLeadTimeHours": round(avg_lt, 1),
+                "observationCount": n,
+                "mae": round(mae, 2),
+                "rmse": round(rmse, 2),
+                "bias": round(bias, 2),
+                "wmape": round(wmape, 2) if wmape is not None else None,
+                "avgActualMW": round(tot_act / n, 2),
+                "avgForecastMW": round(sum(x["forecastGeneration"] for x in items) / n, 2)
+            })
+        return results
+
+    @staticmethod
+    def generate_aligned_csv(aligned_data: List[Dict[str, Any]]) -> str:
+        """
+        Exports aligned actuals and Day-Ahead forecasts to an RFC 4180 CSV string.
+        """
+        import io
+        import csv
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "Start Time (UTC)",
+            "Settlement Date",
+            "Settlement Period",
+            "Hour of Day",
+            "Actual Generation (MW)",
+            "Forecast Generation (MW)",
+            "Forecast Error (MW)",
+            "Absolute Error (MW)",
+            "Publish Time (UTC)",
+            "Decision Cutoff (UTC)",
+            "Lead Time (Hours)"
+        ])
+        for row in aligned_data:
+            writer.writerow([
+                row.get("startTime", ""),
+                row.get("settlementDate", ""),
+                row.get("settlementPeriod", ""),
+                row.get("hourOfDay", ""),
+                row.get("actualGeneration", ""),
+                row.get("forecastGeneration", ""),
+                row.get("error", ""),
+                row.get("absoluteError", ""),
+                row.get("publishTime", ""),
+                row.get("decisionCutoffTime", ""),
+                row.get("leadTimeHours", "")
+            ])
+        return output.getvalue()
+

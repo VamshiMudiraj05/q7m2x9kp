@@ -83,3 +83,24 @@ def test_aligned_series_endpoint():
     assert "actualGeneration" in first_point
     assert "forecastGeneration" in first_point
     assert "error" in first_point
+
+def test_lead_time_decay_endpoint():
+    """Verify lead time decay endpoint returns horizon buckets."""
+    response = client.get("/api/metrics/lead-time-decay?start_date=2026-01-01&end_date=2026-01-07")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["count"] > 0
+    first_bucket = data["data"][0]
+    assert "bucket" in first_bucket
+    assert "mae" in first_bucket
+    assert "avgLeadTimeHours" in first_bucket
+
+def test_export_csv_endpoint():
+    """Verify export-csv endpoint returns valid CSV file."""
+    response = client.get("/api/metrics/export-csv?start_date=2026-01-01&end_date=2026-01-02")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert "attachment; filename=" in response.headers.get("content-disposition", "")
+    assert "Start Time (UTC)" in response.text
+    assert "Actual Generation (MW)" in response.text
+

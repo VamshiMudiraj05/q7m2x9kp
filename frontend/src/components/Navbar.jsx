@@ -1,13 +1,22 @@
 import React from "react";
-import { Activity, Wind, Database, FileText } from "lucide-react";
+import { Activity, Wind, Database, FileText, Calculator, Grid, Download } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
-export default function Navbar({ theme, onToggleTheme, activeTab, onTabChange, backendHealthy }) {
+export default function Navbar({
+  theme,
+  onToggleTheme,
+  activeTab,
+  onTabChange,
+  backendHealthy,
+  onExportCsv,
+}) {
   const navTabs = [
     { id: "overview", label: "Executive Dashboard", icon: Activity },
+    { id: "simulator", label: "Risk Simulator", icon: Calculator },
+    { id: "heatmap", label: "Error Heatmap", icon: Grid },
     { id: "hourly", label: "Settlement Profiles", icon: Wind },
     { id: "daily", label: "Daily Scorecard", icon: Database },
-    { id: "methodology", label: "Methodology & Scope", icon: FileText },
+    { id: "methodology", label: "Methodology", icon: FileText },
   ];
 
   return (
@@ -39,7 +48,7 @@ export default function Navbar({ theme, onToggleTheme, activeTab, onTabChange, b
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 bg-black/[0.03] dark:bg-white/[0.04] p-1 rounded-full border border-black/5 dark:border-white/10">
+        <nav className="hidden lg:flex items-center gap-1 bg-black/[0.03] dark:bg-white/[0.04] p-1 rounded-full border border-black/5 dark:border-white/10">
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -47,24 +56,56 @@ export default function Navbar({ theme, onToggleTheme, activeTab, onTabChange, b
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer ${
                   isActive
                     ? "bg-white dark:bg-[#1a1a1c] text-[#111111] dark:text-[#ffffff] shadow-sm font-semibold"
                     : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
                 }`}
               >
-                <Icon size={14} className={isActive ? "text-[#c2185b] dark:text-[#f3b9c8]" : ""} />
+                <Icon size={13} className={isActive ? "text-[#c2185b] dark:text-[#f3b9c8]" : ""} />
                 <span>{tab.label}</span>
               </button>
             );
           })}
         </nav>
 
-        {/* Theme Toggle & CTA */}
-        <div className="flex items-center gap-3">
+        {/* Theme Toggle & CSV Export CTA */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={onExportCsv}
+            title="Download full January 2026 dataset as CSV for quantitative analysis"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-gray-700 dark:text-gray-200 text-xs font-medium border border-black/5 dark:border-white/10 transition cursor-pointer"
+          >
+            <Download size={14} className="text-[#c2185b] dark:text-[#f3b9c8]" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
           <ThemeToggle theme={theme} onToggle={onToggleTheme} size="sm" />
         </div>
+      </div>
+
+      {/* Mobile Nav */}
+      <div className="lg:hidden flex items-center justify-around px-2 py-1.5 border-t border-black/5 dark:border-white/10 bg-white/90 dark:bg-[#0b0b0d]/90 overflow-x-auto text-[11px]">
+        {navTabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg ${
+                isActive
+                  ? "text-[#c2185b] dark:text-[#f3b9c8] font-bold"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              <Icon size={14} />
+              <span>{tab.label.split(" ")[0]}</span>
+            </button>
+          );
+        })}
       </div>
     </header>
   );
 }
+

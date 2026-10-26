@@ -70,3 +70,49 @@ def test_empty_dataset_returns_no_data():
     assert result["status"] == "NO_DATA"
     assert result["observationCount"] == 0
     assert result["mae"] is None
+
+def test_calculate_lead_time_decay():
+    """Verify grouping into lead time horizon buckets."""
+    sample_data = [
+        {"leadTimeHours": 14.0, "actualGeneration": 1000.0, "forecastGeneration": 1100.0, "error": 100.0, "absoluteError": 100.0, "squaredError": 10000.0},
+        {"leadTimeHours": 15.5, "actualGeneration": 1200.0, "forecastGeneration": 1250.0, "error": 50.0, "absoluteError": 50.0, "squaredError": 2500.0},
+        {"leadTimeHours": 22.0, "actualGeneration": 2000.0, "forecastGeneration": 2200.0, "error": 200.0, "absoluteError": 200.0, "squaredError": 40000.0},
+        {"leadTimeHours": 38.0, "actualGeneration": 3000.0, "forecastGeneration": 3500.0, "error": 500.0, "absoluteError": 500.0, "squaredError": 250000.0},
+    ]
+    decay = MetricsService.calculate_lead_time_decay(sample_data)
+    assert len(decay) == 3
+    # First bucket: 12h - 16h with 2 observations
+    b1 = next(b for b in decay if b["bucket"] == "12h - 16h")
+    assert b1["observationCount"] == 2
+    assert b1["mae"] == 75.0
+    assert b1["avgLeadTimeHours"] == 14.8
+
+    # Bucket 36h+
+    b_late = next(b for b in decay if b["bucket"] == "36h+")
+    assert b_late["observationCount"] == 1
+    assert b_late["mae"] == 500.0
+
+def test_generate_aligned_csv():
+    """Verify CSV export formatting and header."""
+    sample_data = [
+        {
+            "startTime": "2026-01-01T00:00:00Z",
+            "settlementDate": "2026-01-01",
+            "settlementPeriod": 1,
+            "hourOfDay": 0,
+            "actualGeneration": 1500.0,
+            "forecastGeneration": 1650.0,
+            "error": 150.0,
+            "absoluteError": 150.0,
+            "publishTime": "2025-12-31T10:45:00Z",
+            "decisionCutoffTime": "2025-12-31T11:00:00Z",
+            "leadTimeHours": 13.25
+        }
+    ]
+    csv_str = MetricsService.generate_aligned_csv(sample_data)
+    assert "Start Time (UTC)" in csv_str
+    assert "2026-01-01T00:00:00Z" in csv_str
+    assert "1500.0" in csv_str
+    assert "1650.0" in csv_str
+    assert "150.0" in csv_str
+

@@ -51,4 +51,26 @@ describe('Frontend Data & Formatting Logic', () => {
     const leadTime = calcLeadTimeHours('2026-01-02T14:00:00Z', '2026-01-01T09:30:00Z');
     assert.equal(leadTime, 28.5);
   });
+
+  test('computes procurement imbalance and cash-out cost avoidance', () => {
+    const portfolioWindMW = 2000;
+    const hours = 744;
+    const cashoutPrice = 120; // £/MWh
+    const forwardPrice = 80; // £/MWh
+    const biasRatio = 1840 / 13340; // ~13.79% over-forecast
+
+    const shortfallMW = portfolioWindMW * biasRatio;
+    const naiveCashoutCost = shortfallMW * hours * cashoutPrice;
+    assert.ok(naiveCashoutCost > 0);
+
+    // Forward hedge replaces expensive cashout with forward price for 85% of shortfall
+    const daForwardCost = shortfallMW * hours * forwardPrice;
+    const remainingCashout = shortfallMW * hours * 0.15 * cashoutPrice;
+    const hedgedTotalCost = daForwardCost + remainingCashout;
+    const savings = naiveCashoutCost - hedgedTotalCost;
+
+    assert.ok(savings > 0);
+    assert.ok(hedgedTotalCost < naiveCashoutCost);
+  });
 });
+

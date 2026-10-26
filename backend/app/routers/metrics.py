@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Response
 from app.services.cache_service import CacheService
 from app.services.forecast_service import ForecastService
 from app.services.metrics_service import MetricsService
@@ -125,3 +125,47 @@ def get_aligned_time_series(
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve aligned series: {str(exc)}")
+
+@router.get("/lead-time-decay")
+def get_lead_time_decay(
+    start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
+    cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23),
+    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59)
+):
+    """
+    Returns forecast error breakdown across forecast horizon / lead time buckets (hours prior to settlement).
+    Reveals error decay characteristics as the delivery window approaches.
+    """
+    try:
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute)
+        decay_data = MetricsService.calculate_lead_time_decay(aligned)
+        return {
+            "count": len(decay_data),
+            "data": decay_data
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to calculate lead-time decay: {str(exc)}")
+
+@router.get("/export-csv")
+def export_aligned_csv(
+    start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
+    cutoff_hour: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_HOUR, ge=0, le=23),
+    cutoff_minute: int = Query(DEFAULT_DAY_AHEAD_CUTOFF_MINUTE, ge=0, le=59)
+):
+    """
+    Exports aligned actuals and forecasts for quantitative analysts and traders as an RFC 4180 CSV file.
+    """
+    try:
+        aligned = _get_aligned_data(start_date, end_date, cutoff_hour, cutoff_minute)
+        csv_content = MetricsService.generate_aligned_csv(aligned)
+        filename = f"GridWind_UK_Jan2026_Evaluation_{cutoff_hour:02d}{cutoff_minute:02d}Gate.csv"
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to export CSV: {str(exc)}")
+

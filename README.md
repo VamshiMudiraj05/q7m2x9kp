@@ -4,7 +4,7 @@
 [![React 19](https://img.shields.io/badge/Frontend-React_19_Vite_7-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
 [![Tailwind CSS v4](https://img.shields.io/badge/Styling-Tailwind_CSS_v4-38B2AC.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Docker](https://img.shields.io/badge/Deployment-Docker_Compose-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com)
-[![Tests](https://img.shields.io/badge/Tests-20_Passed-success.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-30_Passed-success.svg)]()
 
 A customized decision-support and quantitative evaluation portal built for the **Day-Ahead Power Procurement Team** of a UK electricity utility. It interfaces with National Grid ESO / Elexon BMRS datasets to evaluate wind generation forecasts available at day-ahead gate closure, enabling traders to quantify thermal balancing requirements and imbalance risks for **January 2026**.
 
@@ -21,6 +21,10 @@ In the UK wholesale electricity market:
 This portal provides:
 1. **Forecast Transparency**: Clear visualization of the exact forecast available when bids are submitted, eliminating lookahead bias.
 2. **Quantitative Error Evaluation**: Rigorous calculation of MAE, RMSE, Forecast Bias, WMAPE, and confidence envelopes ($P_{10}$ to $P_{90}$) across all of January 2026.
+3. **Imbalance Risk & Hedging Simulator**: Real-time financial calculator simulating utility portfolio exposure under UK Balancing Mechanism System Buy Prices (cash-out penalties).
+4. **Settlement Error Heatmap Matrix**: 31-day $\times$ 24-hour visual grid of all 744 settlement intervals colored by error severity.
+5. **Forecast Horizon & Lead-Time Decay Analytics**: Quantitative evaluation of error degradation as lead time expands away from auction gate closure.
+6. **One-Click Quant Export**: Downloadable RFC 4180 CSV for quantitative analysts and risk desks.
 
 ---
 
@@ -46,14 +50,14 @@ This portal provides:
 │   │   ├── services/
 │   │   │   ├── cache_service.py    # Local caching layer for sub-50ms query response
 │   │   │   ├── forecast_service.py # D-1 decision cutoff logic & actuals alignment
-│   │   │   └── metrics_service.py  # MAE, RMSE, Bias, WMAPE, MAPE statistical engine
+│   │   │   └── metrics_service.py  # MAE, RMSE, Bias, WMAPE, decay & CSV export engine
 │   │   └── routers/
 │   │       ├── health.py           # GET /api/health
 │   │       ├── actuals.py          # GET /api/actuals
 │   │       ├── forecasts.py        # GET /api/forecasts/day-ahead
-│   │       └── metrics.py          # GET /api/metrics/accuracy, /settlement-periods, /daily, /aligned-series
+│   │       └── metrics.py          # GET /api/metrics (accuracy, settlement, daily, aligned, decay, export-csv)
 │   ├── data/cache/                 # Pre-cached Elexon data for January 2026
-│   └── tests/                      # Automated pytest test suites (20 tests passed)
+│   └── tests/                      # Automated pytest test suites (24 tests passed)
 └── frontend/
     ├── Dockerfile                  # Multi-stage build with Node 22 and Nginx reverse proxy
     ├── .dockerignore
@@ -61,22 +65,27 @@ This portal provides:
     ├── package.json                # React 19, Tailwind CSS v4, Lucide, Motion, Recharts
     ├── vite.config.js              # Vite configuration with API proxy
     ├── index.html                  # HTML entrypoint with Instrument Serif & Inter fonts
+    ├── test/                       # Automated frontend test suite (6 tests passed)
     └── src/
         ├── main.jsx
-        ├── App.jsx                 # Dashboard coordinator (theme, filters, tabs)
+        ├── App.jsx                 # Dashboard coordinator (theme, filters, tabs, export)
         ├── index.css               # Design system & reference typography utilities
         ├── services/
         │   └── api.js              # Centralized backend API client
         └── components/
-            ├── Navbar.jsx          # Header with branding, status badge & theme toggle
+            ├── Navbar.jsx          # Header with branding, status badge, CSV export & theme toggle
             ├── KPIOverview.jsx     # Executive cards (MAE, RMSE, Bias, WMAPE, P10/P90)
-            ├── ForecastChart.jsx   # Interactive Recharts time-series with rich tooltips
-            ├── FilterControls.jsx  # Presets, custom date picker & D-1 gate cutoff selector
+            ├── ExecutiveBriefing.jsx # Quant Trading Desk Intelligence Card
+            ├── ProcurementSimulator.jsx # Portfolio imbalance cash-out & hedging calculator
+            ├── SettlementHeatmap.jsx     # 31-day x 24-hour settlement error matrix
+            ├── LeadTimeChart.jsx        # Forecast horizon decay curve (MAE vs lead time)
+            ├── ForecastChart.jsx        # Interactive Recharts time-series with rich tooltips
+            ├── FilterControls.jsx       # Presets, custom date picker & D-1 gate cutoff selector
             ├── SettlementPeriodChart.jsx # Diurnal 24-hour error profile
             ├── DailyScorecardTable.jsx   # Sortable 31-day January 2026 scorecard
             ├── MethodologyPanel.jsx      # Transparent domain & mathematical definitions
-            ├── ThemeToggle.jsx     # Light / Dark mode spring toggle
-            └── StatusStates.jsx    # Loading, empty, and error retry states
+            ├── ThemeToggle.jsx          # Light / Dark mode spring toggle
+            └── StatusStates.jsx         # Loading, empty, and error retry states
 ```
 
 ---
@@ -172,13 +181,19 @@ Execute backend unit and integration test suites:
 ```bash
 python -m pytest backend/tests -v
 ```
-**Results**: 20 passed in 1.4s (covers mock API errors, D-1 gate selection without lookahead, duplicate resolution, edge cases, and API contracts).
+**Results**: 24 passed in 0.9s (covers mock API errors, D-1 gate selection without lookahead, duplicate resolution, edge cases, lead-time horizon decay, CSV generation, and API contracts).
+
+Execute frontend test suite:
+```bash
+cd frontend && npm test
+```
+**Results**: 6 passed in 94ms (covers data formatting, bias risk classification, gate cutoff validation, January 2026 bounds, lead time calculations, and procurement risk hedging).
 
 Verify frontend production build:
 ```bash
 cd frontend && npm run build
 ```
-**Results**: Bundled cleanly in < 1.2s.
+**Results**: Bundled cleanly in 1.04s.
 
 ---
 

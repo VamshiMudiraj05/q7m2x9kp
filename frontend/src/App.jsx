@@ -6,6 +6,10 @@ import ForecastChart from "./components/ForecastChart";
 import SettlementPeriodChart from "./components/SettlementPeriodChart";
 import DailyScorecardTable from "./components/DailyScorecardTable";
 import MethodologyPanel from "./components/MethodologyPanel";
+import ExecutiveBriefing from "./components/ExecutiveBriefing";
+import ProcurementSimulator from "./components/ProcurementSimulator";
+import SettlementHeatmap from "./components/SettlementHeatmap";
+import LeadTimeChart from "./components/LeadTimeChart";
 import { ErrorState } from "./components/StatusStates";
 import { api } from "./services/api";
 import { ShieldCheck } from "lucide-react";
@@ -97,6 +101,11 @@ export default function App() {
     setCutoffHour(newHour);
   };
 
+  const handleExportCsv = () => {
+    const url = api.getExportCsvUrl(startDate, endDate, cutoffHour);
+    window.open(url, "_blank");
+  };
+
   return (
     <div className="min-h-screen bg-[#fffefd] dark:bg-[#0b0b0d] text-[#222222] dark:text-[#ededed] bg-project-grid bg-radial-blush flex flex-col font-sans transition-colors duration-200">
       <Navbar
@@ -105,6 +114,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         backendHealthy={backendHealthy}
+        onExportCsv={handleExportCsv}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -160,19 +170,30 @@ export default function App() {
         {!error && (
           <>
             {activeTab === "overview" && (
-              <div>
+              <div className="space-y-6">
                 <KPIOverview metrics={metrics} loading={loading} />
+                <ExecutiveBriefing metrics={metrics} />
                 <ForecastChart data={alignedSeries} loading={loading} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SettlementPeriodChart data={settlementData} loading={loading} />
-                  <DailyScorecardTable data={dailyData} loading={loading} />
+                  <LeadTimeChart startDate={startDate} endDate={endDate} cutoffHour={cutoffHour} />
                 </div>
+                <DailyScorecardTable data={dailyData} loading={loading} />
               </div>
             )}
 
+            {activeTab === "simulator" && (
+              <ProcurementSimulator metrics={metrics} alignedSeries={alignedSeries} />
+            )}
+
+            {activeTab === "heatmap" && (
+              <SettlementHeatmap alignedSeries={alignedSeries} />
+            )}
+
             {activeTab === "hourly" && (
-              <div>
+              <div className="space-y-6">
                 <SettlementPeriodChart data={settlementData} loading={loading} />
+                <LeadTimeChart startDate={startDate} endDate={endDate} cutoffHour={cutoffHour} />
                 <ForecastChart data={alignedSeries} loading={loading} />
               </div>
             )}
