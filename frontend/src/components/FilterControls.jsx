@@ -26,9 +26,9 @@ export default function FilterControls({
   ];
 
   return (
-    <div className="p-4 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft mb-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        {/* Preset Range Pills */}
+    <div className="p-4 sm:p-5 rounded-2xl bg-white/80 dark:bg-[#121214]/80 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft mb-6 space-y-3.5">
+      {/* Row 1: Presets + Refresh Button */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 mr-1 flex items-center gap-1">
             <Filter size={13} />
@@ -52,34 +52,46 @@ export default function FilterControls({
           })}
         </div>
 
-        {/* Custom Controls */}
+        {/* Refresh Action */}
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          aria-label="Refresh data"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/[0.05] dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-xs font-medium text-gray-700 dark:text-gray-200 transition-colors cursor-pointer"
+        >
+          <RefreshCw size={13} className={loading ? "animate-spin text-[#c2185b]" : ""} />
+          <span>{loading ? "Updating..." : "Refresh"}</span>
+        </button>
+      </div>
+
+      {/* Row 2: Date Pickers & Day-Ahead Gate */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-black/5 dark:border-white/10">
         <div className="flex flex-wrap items-center gap-3">
           {/* Custom Date Pickers */}
-          <div className="flex items-center gap-2 text-xs">
-            <div className="flex items-center gap-1 bg-black/[0.03] dark:bg-white/[0.04] px-2.5 py-1.5 rounded-xl border border-black/5 dark:border-white/10">
-              <Calendar size={13} className="text-gray-400" />
-              <input
-                type="date"
-                value={startDate}
-                min="2026-01-01"
-                max="2026-01-31"
-                onChange={(e) => onDateChange(e.target.value, endDate)}
-                className="bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none font-mono text-xs cursor-pointer"
-              />
-              <span className="text-gray-400">to</span>
-              <input
-                type="date"
-                value={endDate}
-                min="2026-01-01"
-                max="2026-01-31"
-                onChange={(e) => onDateChange(startDate, e.target.value)}
-                className="bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none font-mono text-xs cursor-pointer"
-              />
-            </div>
+          <div className="flex items-center gap-2 text-xs bg-black/[0.03] dark:bg-white/[0.04] px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10">
+            <Calendar size={13} className="text-gray-400" />
+            <span className="text-gray-500 dark:text-gray-400 text-[11px]">Window:</span>
+            <input
+              type="date"
+              value={startDate}
+              min="2026-01-01"
+              max="2026-01-31"
+              onChange={(e) => onDateChange(e.target.value, endDate)}
+              className="bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none font-mono text-xs cursor-pointer"
+            />
+            <span className="text-gray-400">to</span>
+            <input
+              type="date"
+              value={endDate}
+              min="2026-01-01"
+              max="2026-01-31"
+              onChange={(e) => onDateChange(startDate, e.target.value)}
+              className="bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none font-mono text-xs cursor-pointer"
+            />
           </div>
 
           {/* Day-Ahead Cutoff Gate Selector */}
-          <div className="flex items-center gap-1.5 text-xs bg-black/[0.03] dark:bg-white/[0.04] px-2.5 py-1.5 rounded-xl border border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-1.5 text-xs bg-black/[0.03] dark:bg-white/[0.04] px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10">
             <Clock size={13} className="text-[#c2185b] dark:text-[#f3b9c8]" />
             <span className="text-gray-500 dark:text-gray-400 text-[11px]">D-1 Gate:</span>
             <select
@@ -94,17 +106,11 @@ export default function FilterControls({
               ))}
             </select>
           </div>
+        </div>
 
-          {/* Refresh Action */}
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            aria-label="Refresh data"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/[0.05] dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-xs font-medium text-gray-700 dark:text-gray-200 transition-colors cursor-pointer"
-          >
-            <RefreshCw size={13} className={loading ? "animate-spin text-[#c2185b]" : ""} />
-            <span>{loading ? "Updating..." : "Refresh"}</span>
-          </button>
+        <div className="text-[11px] text-gray-500 dark:text-gray-400 font-mono flex items-center gap-1">
+          <span>Delivery Month:</span>
+          <span className="font-semibold text-gray-700 dark:text-gray-300">January 2026</span>
         </div>
       </div>
     </div>
