@@ -4,7 +4,10 @@
 [![React 19](https://img.shields.io/badge/Frontend-React_19_Vite_7-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
 [![Tailwind CSS v4](https://img.shields.io/badge/Styling-Tailwind_CSS_v4-38B2AC.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Docker](https://img.shields.io/badge/Deployment-Docker_Compose-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com)
+[![Render Live API](https://img.shields.io/badge/Render-Live_API-46E3B7.svg?logo=render&logoColor=white)](https://gridbricks-fglz.onrender.com)
 [![Tests](https://img.shields.io/badge/Tests-30_Passed-success.svg)]()
+
+> **Live Backend API**: [https://gridbricks-fglz.onrender.com](https://gridbricks-fglz.onrender.com) | **Interactive Docs**: [https://gridbricks-fglz.onrender.com/docs](https://gridbricks-fglz.onrender.com/docs)
 
 A customized decision-support and quantitative evaluation portal built for the **Day-Ahead Power Procurement Team** of a UK electricity utility. It interfaces with National Grid ESO / Elexon BMRS datasets to evaluate wind generation forecasts available at day-ahead gate closure, enabling traders to quantify thermal balancing requirements and imbalance risks for **January 2026**.
 
@@ -146,19 +149,22 @@ docker compose down
 
 ---
 
-## 5. Deployment Guide (Vercel & Render / Heroku)
+## 5. Deployment Guide & Live Links
 
-### Recommended Cloud Architecture
-* **Frontend**: Deploy on **Vercel** or Netlify as a single-page application.
+### Live Deployments
+* **Live Backend API (Render)**: [https://gridbricks-fglz.onrender.com](https://gridbricks-fglz.onrender.com)
+* **Interactive API Documentation (Swagger)**: [https://gridbricks-fglz.onrender.com/docs](https://gridbricks-fglz.onrender.com/docs)
+* **API Health Check**: [https://gridbricks-fglz.onrender.com/api/health](https://gridbricks-fglz.onrender.com/api/health)
+
+### Frontend Deployment (Vercel / Netlify / Render Static Site)
+* **Vercel / Netlify (Recommended)**:
+  * Connect repository: `https://github.com/VamshiMudiraj05/q7m2x9kp`
   * Root directory: `frontend`
   * Build command: `npm run build`
   * Output directory: `dist`
-  * Environment variable: `VITE_API_BASE_URL=https://your-backend.onrender.com`
-* **Backend**: Deploy on **Render**, **Railway**, or **Heroku** as a Python web service.
-  * Root directory: `backend`
-  * Build command: `pip install -r requirements.txt`
-  * Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-  * Health check path: `/api/health`
+  * Environment variable: `VITE_API_BASE_URL=https://gridbricks-fglz.onrender.com` (already pre-configured in `frontend/.env.production`)
+* **Render Static Site**:
+  * Blueprint provided in `render.yaml` automatically routes requests to the deployed backend.
 
 ---
 
