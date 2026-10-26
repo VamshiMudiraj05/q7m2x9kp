@@ -1,12 +1,96 @@
-import React from "react";
+import React, { useState } from "react";
 import { AlertTriangle, HelpCircle } from "lucide-react";
+
+function MetricTooltip({
+  title,
+  plainEnglish,
+  whatNumberMeans,
+  whyItMatters,
+  align = "center",
+}) {
+  const [open, setOpen] = useState(false);
+
+  const alignClass =
+    align === "left"
+      ? "left-0"
+      : align === "right"
+      ? "right-0"
+      : "left-1/2 -translate-x-1/2";
+
+  return (
+    <div
+      className="relative inline-flex items-center"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onClick={() => setOpen((prev) => !prev)}
+    >
+      <button
+        type="button"
+        aria-label={`Explain ${title} in plain English`}
+        className="p-1 -m-1 text-gray-400 hover:text-[#c2185b] dark:hover:text-[#f3b9c8] transition-colors rounded-full focus:outline-none cursor-pointer"
+      >
+        <HelpCircle
+          size={14}
+          className={open ? "text-[#c2185b] dark:text-[#f3b9c8]" : ""}
+        />
+      </button>
+
+      {open && (
+        <div
+          className={`absolute top-full mt-2 w-72 sm:w-80 p-4 rounded-2xl bg-white/95 dark:bg-[#18181b]/95 backdrop-blur-md border border-black/10 dark:border-white/15 shadow-2xl z-50 text-left normal-case tracking-normal font-sans text-xs text-gray-700 dark:text-gray-200 transition-all ${alignClass}`}
+          role="tooltip"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-2 font-bold text-gray-900 dark:text-white pb-2.5 border-b border-black/5 dark:border-white/10 text-xs">
+            <span className="w-2 h-2 rounded-full bg-[#c2185b] dark:bg-[#f3b9c8]" />
+            <span>{title}</span>
+          </div>
+
+          <div className="mt-2.5 space-y-2.5">
+            <div>
+              <span className="font-semibold text-gray-900 dark:text-white block text-[10px] uppercase tracking-wider text-opacity-80">
+                In Plain English:
+              </span>
+              <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed mt-0.5">
+                {plainEnglish}
+              </p>
+            </div>
+
+            {whatNumberMeans && (
+              <div className="p-2 rounded-lg bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5">
+                <span className="font-semibold text-gray-900 dark:text-white block text-[10px] uppercase tracking-wider text-opacity-80">
+                  What your number means:
+                </span>
+                <p className="text-xs font-medium text-gray-800 dark:text-gray-200 mt-0.5 leading-relaxed">
+                  {whatNumberMeans}
+                </p>
+              </div>
+            )}
+
+            <div>
+              <span className="font-semibold text-gray-900 dark:text-white block text-[10px] uppercase tracking-wider text-opacity-80">
+                Why it matters for power buyers:
+              </span>
+              <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed mt-0.5">
+                {whyItMatters}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function KPIOverview({ metrics, loading }) {
   if (loading || !metrics) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-32 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05] animate-pulse border border-black/5 dark:border-white/5" />
+          <div
+            key={i}
+            className="h-32 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05] animate-pulse border border-black/5 dark:border-white/5"
+          />
         ))}
       </div>
     );
@@ -21,7 +105,6 @@ export default function KPIOverview({ metrics, loading }) {
     mape,
     mapeExcludedCount = 0,
     maxAbsoluteErrorMW = 0,
-    errorPercentiles,
   } = metrics;
 
   const isOverForecasting = (bias ?? 0) > 0;
@@ -36,9 +119,13 @@ export default function KPIOverview({ metrics, loading }) {
             <span className="flex items-center gap-1.5 uppercase tracking-wider">
               Mean Absolute Error
             </span>
-            <span title="Average magnitude of forecast error across all settlement intervals">
-              <HelpCircle size={13} className="text-gray-400 group-hover:text-[#c2185b] transition-colors" />
-            </span>
+            <MetricTooltip
+              title="Mean Absolute Error (MAE)"
+              align="left"
+              plainEnglish="The average size of the forecast mistake, regardless of whether the prediction was too high or too low."
+              whatNumberMeans={`On average, the wind prediction was off by ${mae != null ? Number(mae).toLocaleString() : '—'} MW in any given 30-minute interval.`}
+              whyItMatters="Shows electricity buyers the typical buffer of backup power (e.g. gas plants) they regularly need to have on standby."
+            />
           </div>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl sm:text-4xl font-bold tracking-tight font-instrument text-[#111111] dark:text-[#ffffff]">
@@ -60,9 +147,13 @@ export default function KPIOverview({ metrics, loading }) {
             <span className="flex items-center gap-1.5 uppercase tracking-wider">
               Root Mean Squared Error
             </span>
-            <span title="Penalizes large forecast misses heavily. Crucial for exposure to severe balancing cash-out spikes">
-              <HelpCircle size={13} className="text-gray-400 group-hover:text-[#c2185b] transition-colors" />
-            </span>
+            <MetricTooltip
+              title="Root Mean Squared Error (RMSE)"
+              align="center"
+              plainEnglish="Similar to average error, but gives much harsher penalties to big mistakes instead of treating all misses equally."
+              whatNumberMeans={`At ${rmse != null ? Number(rmse).toLocaleString() : '—'} MW, it is ${mae != null && rmse != null ? `+${(rmse - mae).toFixed(1)} MW higher` : '—'} than MAE. This gap proves there were large surprise swings rather than just steady small misses.`}
+              whyItMatters="Big surprise forecast misses trigger emergency grid balancing and expensive last-minute power purchases at peak prices."
+            />
           </div>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl sm:text-4xl font-bold tracking-tight font-instrument text-[#111111] dark:text-[#ffffff]">
@@ -84,9 +175,13 @@ export default function KPIOverview({ metrics, loading }) {
             <span className="flex items-center gap-1.5 uppercase tracking-wider">
               Forecast Bias
             </span>
-            <span title="Positive bias = over-forecasting (under-buying thermal power). Negative bias = under-forecasting (over-buying thermal power)">
-              <HelpCircle size={13} className="text-gray-400 group-hover:text-[#c2185b] transition-colors" />
-            </span>
+            <MetricTooltip
+              title="Forecast Bias"
+              align="center"
+              plainEnglish="Tells you whether the forecast systematically guesses too high (over-forecast) or too low (under-forecast)."
+              whatNumberMeans={`At ${bias != null ? `${bias > 0 ? '+' : ''}${Number(bias).toFixed(1)}` : '—'} MW (Over-Forecasting), the forecast predicted ~${bias != null ? Math.round(Math.abs(bias)).toLocaleString() : '—'} MW MORE wind power than actually showed up.`}
+              whyItMatters="Over-forecasting leaves the utility short on electricity at delivery time, forcing it to buy emergency power at costly UK cash-out rates."
+            />
           </div>
           <div className="flex items-baseline gap-2 mt-1">
             <span
@@ -118,9 +213,13 @@ export default function KPIOverview({ metrics, loading }) {
             <span className="flex items-center gap-1.5 uppercase tracking-wider">
               Volume Error (WMAPE)
             </span>
-            <span title="Weighted MAPE = Sum(|Error|)/Sum(Actual) * 100%. Immune to division-by-zero during low-wind periods">
-              <HelpCircle size={13} className="text-gray-400 group-hover:text-[#c2185b] transition-colors" />
-            </span>
+            <MetricTooltip
+              title="Volume Error (WMAPE)"
+              align="right"
+              plainEnglish="The total error volume expressed as a percentage of all wind electricity produced throughout the month."
+              whatNumberMeans={`At ${wmape != null ? Number(wmape).toFixed(1) : '—'}%, about 1 out of every 5.4 megawatt-hours of wind generation needed rebalancing.`}
+              whyItMatters="Unlike standard percentage errors that blow up to 1,000%+ on calm days with near-zero wind, Weighted MAPE gives a realistic commercial percentage score for power procurement."
+            />
           </div>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl sm:text-4xl font-bold tracking-tight font-instrument text-[#111111] dark:text-[#ffffff]">
