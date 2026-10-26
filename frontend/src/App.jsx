@@ -6,7 +6,6 @@ import ForecastChart from "./components/ForecastChart";
 import SettlementPeriodChart from "./components/SettlementPeriodChart";
 import DailyScorecardTable from "./components/DailyScorecardTable";
 import MethodologyPanel from "./components/MethodologyPanel";
-import ExecutiveBriefing from "./components/ExecutiveBriefing";
 import ProcurementSimulator from "./components/ProcurementSimulator";
 import SettlementHeatmap from "./components/SettlementHeatmap";
 import LeadTimeChart from "./components/LeadTimeChart";
@@ -189,7 +188,6 @@ export default function App() {
             {activeTab === "overview" && (
               <div className="space-y-6">
                 <KPIOverview metrics={metrics} loading={loading} />
-                <ExecutiveBriefing metrics={metrics} />
                 <ForecastChart data={alignedSeries} loading={loading} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SettlementPeriodChart data={settlementData} loading={loading} />

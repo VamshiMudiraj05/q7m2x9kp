@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, HelpCircle, Compass } from "lucide-react";
+import { AlertTriangle, HelpCircle } from "lucide-react";
 
 export default function KPIOverview({ metrics, loading }) {
   if (loading || !metrics) {
@@ -27,7 +27,7 @@ export default function KPIOverview({ metrics, loading }) {
   const isOverForecasting = (bias ?? 0) > 0;
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="mb-6">
       {/* 4 Core Quantitative Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* MAE Card */}
@@ -138,42 +138,6 @@ export default function KPIOverview({ metrics, loading }) {
           </div>
         </div>
       </div>
-
-      {/* Uncertainty & Distribution Envelope (P10 / P50 / P90) */}
-      {errorPercentiles && (
-        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
-          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium">
-            <Compass size={15} className="text-[#c2185b] dark:text-[#f3b9c8]" />
-            <span>Statistical Uncertainty Envelope (Forecast − Actual):</span>
-          </div>
-          <div className="flex items-center gap-6 font-mono text-[11px]">
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">P10 (Worst Under-forecast): </span>
-              <span className="font-bold text-sky-600 dark:text-sky-400">
-                {errorPercentiles.p10 > 0 ? "+" : ""}{errorPercentiles.p10} MW
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">P50 (Median Shift): </span>
-              <span className="font-bold text-gray-900 dark:text-gray-100">
-                {errorPercentiles.p50_median > 0 ? "+" : ""}{errorPercentiles.p50_median} MW
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">P90 (Worst Over-forecast): </span>
-              <span className="font-bold text-amber-600 dark:text-amber-400">
-                {errorPercentiles.p90 > 0 ? "+" : ""}{errorPercentiles.p90} MW
-              </span>
-            </div>
-            <div className="text-gray-500 dark:text-gray-400">
-              <span>Evaluated Intervals: </span>
-              <span className="font-bold text-gray-900 dark:text-gray-200">
-                {observationCount} {observationCount > 800 ? "Settlement Periods (30m)" : "Hourly Intervals (60m)"}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
