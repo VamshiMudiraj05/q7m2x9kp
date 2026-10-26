@@ -1,0 +1,112 @@
+import React from "react";
+import { Calendar, Clock, RefreshCw, Filter } from "lucide-react";
+
+export default function FilterControls({
+  startDate,
+  endDate,
+  onDateChange,
+  cutoffHour,
+  onCutoffChange,
+  onRefresh,
+  loading,
+}) {
+  const presets = [
+    { label: "Full Month (Jan 2026)", start: "2026-01-01", end: "2026-01-31" },
+    { label: "Week 1 (Jan 1-7)", start: "2026-01-01", end: "2026-01-07" },
+    { label: "Week 2 (Jan 8-14)", start: "2026-01-08", end: "2026-01-14" },
+    { label: "Week 3 (Jan 15-21)", start: "2026-01-15", end: "2026-01-21" },
+    { label: "Week 4 (Jan 22-31)", start: "2026-01-22", end: "2026-01-31" },
+  ];
+
+  const gateOptions = [
+    { hour: 9, label: "09:00 UTC D-1 (Early run)" },
+    { hour: 11, label: "11:00 UTC D-1 (EPEX SPOT Gate)" },
+    { hour: 12, label: "12:00 UTC D-1 (Nord Pool Auction)" },
+    { hour: 17, label: "17:00 UTC D-1 (Late afternoon)" },
+  ];
+
+  return (
+    <div className="p-4 rounded-2xl bg-white/70 dark:bg-[#121214]/70 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-soft mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        {/* Preset Range Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 mr-1 flex items-center gap-1">
+            <Filter size={13} />
+            Presets:
+          </span>
+          {presets.map((preset) => {
+            const isActive = startDate === preset.start && endDate === preset.end;
+            return (
+              <button
+                key={preset.label}
+                onClick={() => onDateChange(preset.start, preset.end)}
+                className={`px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#c2185b] text-white font-semibold shadow-xs"
+                    : "bg-black/[0.04] dark:bg-white/[0.05] text-gray-700 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/10"
+                }`}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Custom Controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Custom Date Pickers */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1 bg-black/[0.03] dark:bg-white/[0.04] px-2.5 py-1.5 rounded-xl border border-black/5 dark:border-white/10">
+              <Calendar size={13} className="text-gray-400" />
+              <input
+                type="date"
+                value={startDate}
+                min="2026-01-01"
+                max="2026-01-31"
+                onChange={(e) => onDateChange(e.target.value, endDate)}
+                className="bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none font-mono text-xs cursor-pointer"
+              />
+              <span className="text-gray-400">to</span>
+              <input
+                type="date"
+                value={endDate}
+                min="2026-01-01"
+                max="2026-01-31"
+                onChange={(e) => onDateChange(startDate, e.target.value)}
+                className="bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none font-mono text-xs cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Day-Ahead Cutoff Gate Selector */}
+          <div className="flex items-center gap-1.5 text-xs bg-black/[0.03] dark:bg-white/[0.04] px-2.5 py-1.5 rounded-xl border border-black/5 dark:border-white/10">
+            <Clock size={13} className="text-[#c2185b] dark:text-[#f3b9c8]" />
+            <span className="text-gray-500 dark:text-gray-400 text-[11px]">D-1 Gate:</span>
+            <select
+              value={cutoffHour}
+              onChange={(e) => onCutoffChange(Number(e.target.value))}
+              className="bg-transparent text-gray-900 dark:text-gray-100 font-semibold text-xs focus:outline-none cursor-pointer"
+            >
+              {gateOptions.map((opt) => (
+                <option key={opt.hour} value={opt.hour} className="dark:bg-[#18181b]">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Refresh Action */}
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            aria-label="Refresh data"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/[0.05] dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-xs font-medium text-gray-700 dark:text-gray-200 transition-colors cursor-pointer"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin text-[#c2185b]" : ""} />
+            <span>{loading ? "Updating..." : "Refresh"}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

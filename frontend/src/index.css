@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-light: #fffefd;
+    --text-light: #222222;
+    --scrollbar-track: rgba(247, 232, 236, 0.4);
+    --scrollbar-thumb: #f3b9c8;
+    --scrollbar-thumb-hover: #e8a2b5;
+  }
+
+  .dark {
+    --bg-dark: #0b0b0d;
+    --text-dark: #ededed;
+    --scrollbar-track: rgba(0, 0, 0, 0.25);
+    --scrollbar-thumb: #a55f79;
+    --scrollbar-thumb-hover: #b96e89;
+  }
+
+  html {
+    background-color: #fffefd;
+    color: #222222;
+  }
+
+  html.dark {
+    background-color: #0b0b0d;
+    color: #ededed;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+/* Custom Backgrounds & Gradients from UI Reference */
+.bg-radial-blush {
+  background: radial-gradient(circle at 80% 15%, rgba(247, 232, 236, 0.85) 0%, rgba(255, 254, 253, 0) 65%);
+}
+
+.dark .bg-radial-blush {
+  background: radial-gradient(circle at 80% 15%, rgba(194, 24, 91, 0.12) 0%, rgba(11, 11, 13, 0) 65%);
+}
+
+.bg-project-grid {
+  background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.dark .bg-project-grid {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+/* Card & Interactive Accents */
+.dashed-border-anim {
+  border: 1px dashed rgba(0, 0, 0, 0.12);
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dashed-border-anim:hover {
+  border-color: rgba(194, 24, 91, 0.5);
+  transform: translateY(-1px);
+}
+
+.dark .dashed-border-anim {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark .dashed-border-anim:hover {
+  border-color: rgba(243, 185, 200, 0.5);
+}
+
+.shadow-soft {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.06);
+}
+
+.dark .shadow-soft {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
